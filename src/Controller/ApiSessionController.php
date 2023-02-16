@@ -16,6 +16,7 @@ use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 
 use App\Entity\Session;
+use App\Entity\Etudiant;
 use App\Entity\Matiere;
 use App\Entity\Type;
 use App\Entity\Groupe;
@@ -99,14 +100,34 @@ class ApiSessionController extends AbstractController{
             $session->setHeureFin($heureFin);
             $session->setIdMatiere($idMatiere);
             $session->setType($type);
-            foreach($idGroupes as $idGroupe){
-                $session->addIdGroupe($entityManager->getRepository(Groupe::class)->find($idGroupe));
-            }
             foreach($idSalles as $idSalle){
                 $session->addIdSalle($entityManager->getRepository(Salle::class)->find($idSalle));
             }
             foreach($idIntervenants as $idIntervenant){
                 $session->addIdStaff($entityManager->getRepository(Staff::class)->find($idIntervenant));
+            }
+
+        }
+
+        $entityManager->persist($session);
+        $entityManager->flush();
+
+        foreach($idGroupes as $idGroupe){
+            $groupe = $entityManager->getRepository(Groupe::class)->find($idGroupe);
+            $session->addIdGroupe($groupe);
+            $etudiants = $entityManager->getRepository(Etudiant::class)->getEtudiantsByGroupe($idGroupe);
+            
+            foreach($etudiants as $etudiant){
+                print_r($etudiant);
+                $sql = "INSERT INTO `participe` (`ine`, `id_session`, `presence`, `code_emargement`) VALUES (:ine, :id_session, :presence, :code_emargement)";
+                $stmt = $entityManager->getConnection()->prepare($sql);
+                $stmt->execute([
+                    'ine' => $etudiant['ine'],
+                    'id_session' => $session->getId(),
+                    'presence' => 0,
+                    'code_emargement' => "452123125"
+                ]);
+
             }
         }
 
@@ -115,6 +136,53 @@ class ApiSessionController extends AbstractController{
 
         $response = new Response();
         $response->setStatusCode(Response::HTTP_CREATED);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        return $response;
+    }
+
+    // Supprimer une session
+    /**
+     * Suppression d'une session
+     * 
+     * @OA\Response(
+     *    response=200,
+     *    description="Session supprimée"
+     * )
+     * 
+     * @OA\Response(
+     *   response=400,
+     *   description="Requete invalide"
+     * )
+     * 
+     * @OA\RequestBody(
+     *   @OA\JsonContent(
+     *      type="object",
+     *      @OA\Property(property="id", type="integer")
+     *   )
+     * )
+     * 
+     * @OA\Tag(name="Session")
+     */
+    #[Route('/session/suppression', name: 'suppression_session',methods: ['DELETE'])]
+    public function suppressionSession(Request $request){
+        $entityManager = $this->doctrine->getManager();
+
+        $data = json_decode($request->getContent(), true);
+
+        $id = $data['id'];
+
+        $session = $entityManager->getRepository(Session::class)->find($id);
+
+        if($session == null){
+            throw new BadRequestHttpException("La session n'existe pas");
+        }else{
+            $entityManager->remove($session);
+            $entityManager->flush();
+        }
+
+        $response = new Response();
+        $response->setStatusCode(Response::HTTP_OK);
         $response->headers->set('Content-Type', 'application/json');
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
