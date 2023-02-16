@@ -240,18 +240,18 @@ class Session
         return $this->idStaff;
     }
 
-    public function addIdStaff(Staff $idStaff): self
+    public function addIdStaff(Staff $staff): self
     {
-        if (!$this->idStaff->contains($idStaff)) {
-            $this->idStaff->add($idStaff);
+        if (!$this->idStaff->contains($staff)) {
+            $this->idStaff->add($staff);
         }
 
         return $this;
     }
 
-    public function removeIdStaff(Staff $idStaff): self
+    public function removeIdStaff(Staff $staff): self
     {
-        $this->idStaff->removeElement($idStaff);
+        $this->idStaff->removeElement($staff);
 
         return $this;
     }
