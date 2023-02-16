@@ -212,7 +212,7 @@ class ApiGroupeController extends AbstractController{
      *   required=true,
      *   @OA\JsonContent(
      *     @OA\Property(property="idGroupe", type="integer"),
-     *     @OA\Property(property="ine",type="string")
+     *     @OA\Property(property="ines", type="array", @OA\Items(type="string", example="A12345"))
      *   )
      * )
      * 
@@ -223,23 +223,25 @@ class ApiGroupeController extends AbstractController{
     {
         $data = json_decode($request->getContent(), true);
         $idGroupe = $data['idGroupe'];
-        $ine = $data['ine'];
-    
-        $groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['id' => $idGroupe]);
-        if (!$groupe) {
-            throw $this->createNotFoundException(sprintf('Groupe non trouvé'));
+        $ines = $data['ines'];
+
+        foreach ($ines as $ine) {
+            $groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['id' => $idGroupe]);
+            if (!$groupe) {
+                throw $this->createNotFoundException(sprintf('Groupe non trouvé'));
+            }
+        
+            $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
+            if (!$etudiant) {
+                throw $this->createNotFoundException(sprintf('Etudiant non trouvé'));
+            }
+        
+            if (!$groupe->hasEtudiant($etudiant)) {
+                throw new BadRequestHttpException('Cet étudiant n\'appartient pas à ce groupe');
+            }
+        
+            $groupe->removeEtudiant($etudiant);
         }
-    
-        $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
-        if (!$etudiant) {
-            throw $this->createNotFoundException(sprintf('Etudiant non trouvé'));
-        }
-    
-        if (!$groupe->hasEtudiant($etudiant)) {
-            throw new BadRequestHttpException('Cet étudiant n\'appartient pas à ce groupe');
-        }
-    
-        $groupe->removeEtudiant($etudiant);
         $entityManager = $this->doctrine->getManager();
         $entityManager->persist($groupe);
         $entityManager->flush();
