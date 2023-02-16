@@ -29,17 +29,6 @@ class GroupeRepository extends ServiceEntityRepository
                 ->getArrayResult();
     }
 
-    // Récupérer le groupe dont l'id est passé en paramètre
-    public function findOneById($id): ?Groupe
-    {
-        return $this->createQueryBuilder('g')
-            ->andWhere('g.id = :id')
-            ->setParameter('id', $id)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-
     public function save(Groupe $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);

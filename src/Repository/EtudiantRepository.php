@@ -45,17 +45,6 @@ class EtudiantRepository extends ServiceEntityRepository
             ->getArrayResult();
     }
 
-    // Récupérer l'étudiant dont l'ine est passé en paramètre
-    public function findOneByIne($ine): ?Etudiant
-    {
-        return $this->createQueryBuilder('g')
-            ->andWhere('g.ine = :ine')
-            ->setParameter('ine', $ine)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-
     public function save(Etudiant $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);

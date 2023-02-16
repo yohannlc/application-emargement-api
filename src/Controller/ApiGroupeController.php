@@ -76,10 +76,14 @@ class ApiGroupeController extends AbstractController{
      */
     #[Route('/groupe/{id}', name: 'id',methods: ['GET'])]
     public function getGroupeById($id): Response{
-        $groupe = $this->doctrine->getRepository(Groupe::class)->getGroupeById($id);
+        $groupe = $this->doctrine->getRepository(Groupe::class)->findOneby(['id' => $id]);
+        $groupe = [
+            'id' => $groupe->getId(),
+            'groupe' => $groupe->getGroupe()
+        ];
 
         $response = new Response();
-        $response->setContent(json_encode($groupe[0]));
+        $response->setContent(json_encode($groupe));
         $response->headers->set('Content-Type', 'application/json');
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
@@ -93,77 +97,100 @@ class ApiGroupeController extends AbstractController{
      *   description="Groupe créé"
      * )
      * 
-     * @OA\Parameter(
-     *   name="nom",
-     *   in="path",
-     *   description="Nom du groupe",
+     * @OA\Response(
+     *   response=400,
+     *   description="Le groupe existe déjà ou le nom de groupe est manquant",
+     * )     
+     *  
+     * 
+     * @OA\RequestBody(
      *   required=true,
-     *   @OA\Schema(
-     *     type="string"
+     *   description="Nom du groupe",
+     *   @OA\JsonContent(
+     *     type="object",
+     *     @OA\Property(property="nom",type="string")
      *   )
      * )
      * 
-     * 
      * @OA\Tag(name="Groupe")
      */
-    #[Route('/groupe/{nom}', name: 'groupe',methods: ['POST'])]
-    public function createGroupe($nom): Response{
+    #[Route('/groupe/creation', name: 'groupe',methods: ['POST'])]
+    public function createGroupe(Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        $nom = $data['nom'];
+
+        if (!$nom) {
+            throw new BadRequestHttpException('Nom de groupe manquant');
+        }
+    
         $groupe = new Groupe();
         $groupe->setGroupe($nom);
+        $test_existance = $this->doctrine->getRepository(Groupe::class)->findOneBy(['groupe' => $nom]);
+        if ($test_existance) {
+            throw new BadRequestHttpException('Ce groupe existe déjà');
+        }
+    
         $entityManager = $this->doctrine->getManager();
         $entityManager->persist($groupe);
         $entityManager->flush();
-
+    
         $response = new Response();
-        $response->setContent(json_encode($groupe));
+        $response->setStatusCode(Response::HTTP_CREATED);
         $response->headers->set('Content-Type', 'application/json');
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
 
-    /** 
-     * Ajouter un étudiant à un groupe
-     * 
+    /**
+     * Ajouter des étudiants à un groupe
+     *
      * @OA\Response(
      *  response=201,
-     *   description="Etudiant ajouté au groupe"
+     *   description="Etudiants ajoutés au groupe"
      * )
-     * 
-     * @OA\Parameter(
-     *  name="idGroupe",
-     *  in="path",
-     *  description="Id du groupe",
-     *  required=true,
-     *  @OA\Schema(
-     *     type="integer"
-     *  )
+     *
+     * @OA\RequestBody(
+     *     description="Données à envoyer",
+     *     required=true,
+     *     @OA\JsonContent(
+     *         required={"idGroupe","ines"},
+     *         @OA\Property(property="idGroupe", type="integer", example="1"),
+     *         @OA\Property(property="ines", type="array", @OA\Items(type="string", example="A12345"))
+     *     )
      * )
-     * 
-     * @OA\Parameter(
-     *   name="ine",
-     *   in="path",
-     *   description="INE de l'étudiant",
-     *   required=true,
-     *   @OA\Schema(
-     *     type="string"
-     *   )
-     * )
-     * 
+     *
      * @OA\Tag(name="Groupe")
      */
+    #[Route('/groupe/etudiant/ajout', name: 'groupe_ajout_etudiants', methods: ['POST'])]
+    public function addEtudiantsToGroupe(Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        $idGroupe = $data['idGroupe'];
+        $ines = $data['ines'];
 
-    #[Route('/groupe/{idGroupe}/etudiant/{ine}', name: 'groupe_ajout_etudiant',methods: ['POST'])]
-    public function addEtudiantToGroupe(int $idGroupe, string $ine): Response{
-        $groupe = $this->doctrine->getRepository(Groupe::class)->findOneById($idGroupe);
-        $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneByIne($ine);
-        $groupe->addEtudiant($etudiant);
+        $groupe = $this->doctrine->getRepository(Groupe::class)->find($idGroupe);
+
+        foreach ($ines as $ine) {
+            echo $ine;
+            $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
+
+            if (!$etudiant) {
+                throw $this->createNotFoundException(sprintf('L\'étudiant avec INE %s n\'a pas été trouvé.', $ine));
+            }
+
+            $groupe->addEtudiant($etudiant);
+        }
+
         $entityManager = $this->doctrine->getManager();
         $entityManager->persist($groupe);
         $entityManager->flush();
 
         $response = new Response();
+        $response->setStatusCode(Response::HTTP_CREATED);
         $response->headers->set('Content-Type', 'application/json');
         $response->headers->set('Access-Control-Allow-Origin', '*');
+
         return $response;
     }
 
@@ -171,45 +198,57 @@ class ApiGroupeController extends AbstractController{
      * Supprimer un étudiant d'un groupe
      * 
      * @OA\Response(
-     *   response=201,
+     *   response=204,
      *   description="Etudiant supprimé du groupe"
      * )
      * 
-     * @OA\Parameter(
-     *   name="idGroupe",
-     *   in="path",
-     *   description="Id du groupe",
-     *   required=true,
-     *   @OA\Schema(
-     *     type="integer"
-     *   )
+     * @OA\Response(
+     *   response=404,
+     *   description="Groupe ou étudiant introuvable"
      * )
      * 
-     * @OA\Parameter(
-     *   name="ine",
-     *   in="path",
-     *   description="INE de l'étudiant",
+     * @OA\RequestBody(
+     *   request="SuppressionEtudiant",
      *   required=true,
-     *   @OA\Schema(
-     *     type="string"
+     *   @OA\JsonContent(
+     *     @OA\Property(property="idGroupe", type="integer"),
+     *     @OA\Property(property="ine",type="string")
      *   )
      * )
      * 
      * @OA\Tag(name="Groupe")
      */
-    #[Route('/groupe/{idGroupe}/etudiant/{ine}', name: 'groupe_suppression_etudiant',methods: ['DELETE'])]
-    public function removeEtudiantToGroupe(int $idGroupe,string $ine){
-        $groupe = $this->doctrine->getRepository(Groupe::class)->findOneById($idGroupe);
-        $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneByIne($ine);
+    #[Route('/groupe/etudiant/suppression', name: 'groupe_suppression_etudiant',methods: ['DELETE'])]
+    public function removeEtudiantFromGroupe(Request $request)
+    {
+        $data = json_decode($request->getContent(), true);
+        $idGroupe = $data['idGroupe'];
+        $ine = $data['ine'];
+    
+        $groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['id' => $idGroupe]);
+        if (!$groupe) {
+            throw $this->createNotFoundException(sprintf('Groupe non trouvé'));
+        }
+    
+        $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
+        if (!$etudiant) {
+            throw $this->createNotFoundException(sprintf('Etudiant non trouvé'));
+        }
+    
+        if (!$groupe->hasEtudiant($etudiant)) {
+            throw new BadRequestHttpException('Cet étudiant n\'appartient pas à ce groupe');
+        }
+    
         $groupe->removeEtudiant($etudiant);
         $entityManager = $this->doctrine->getManager();
         $entityManager->persist($groupe);
         $entityManager->flush();
-
+    
         $response = new Response();
-        $response->setContent(json_encode($groupe));
+        $response->setStatusCode(Response::HTTP_NO_CONTENT);
         $response->headers->set('Content-Type', 'application/json');
         $response->headers->set('Access-Control-Allow-Origin', '*');
+    
         return $response;
     }
 

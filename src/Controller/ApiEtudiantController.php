@@ -103,12 +103,19 @@ class ApiEtudiantController extends AbstractController{
      * @OA\Tag(name="Etudiant")
      */
     #[Route('/etudiant/{ine}', name: 'etudiant',methods: ['GET'])]
-    public function getEtudiantByINE($ine): Response
+    public function getEtudiantByINE(string $ine): Response
     {
-        $etudiant = $this->doctrine->getRepository(Etudiant::class)->getEtudiantByINE($ine);
+        $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
 
+        $etudiant = [
+            'ine' => $etudiant->getIne(),
+            'identifiant' => $etudiant->getIdentifiant(),
+            'nom' => $etudiant->getNom(),
+            'prenom' => $etudiant->getPrenom()
+        ];
+        
         $response = new Response();
-        $response->setContent(json_encode($etudiant[0]));
+        $response->setContent(json_encode($etudiant));
         $response->headers->set('Content-Type', 'application/json');
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
