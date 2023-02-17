@@ -9,7 +9,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Validator\Constraints\DateTimeInterface;
-
+use Doctrine\ORM\Query\ResultSetMapping;
 
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
@@ -22,6 +22,7 @@ use App\Entity\Type;
 use App\Entity\Groupe;
 use App\Entity\Salle;
 use App\Entity\Staff;
+
 
 use DateTime;
 
@@ -78,6 +79,7 @@ class ApiSessionController extends AbstractController{
         $idIntervenants = $data['idIntervenants'];
 
         $session = new Session();
+
         if($date == null){
             throw new BadRequestHttpException("La date n'est pas valide");
         }elseif($heureDebut == null){
@@ -106,33 +108,51 @@ class ApiSessionController extends AbstractController{
             foreach($idIntervenants as $idIntervenant){
                 $session->addIdStaff($entityManager->getRepository(Staff::class)->find($idIntervenant));
             }
+            foreach($idGroupes as $idGroupe){
+                $groupe = $entityManager->getRepository(Groupe::class)->find($idGroupe);
+                $session->addIdGroupe($groupe);
+                $etudiants = $entityManager->getRepository(Etudiant::class)->getEtudiantsByGroupe($idGroupe);
 
-        }
+                // Création de la session et de son id
+                $entityManager->persist($session);
+                $entityManager->flush();
+                
+                foreach($etudiants as $etudiant){
+                    $etudiant = $entityManager->getRepository(Etudiant::class)->find($etudiant['ine']);
 
-        $entityManager->persist($session);
-        $entityManager->flush();
+                    $session->addIne($etudiant);
+                    $entityManager->persist($session);
+                    $entityManager->flush();
 
-        foreach($idGroupes as $idGroupe){
-            $groupe = $entityManager->getRepository(Groupe::class)->find($idGroupe);
-            $session->addIdGroupe($groupe);
-            $etudiants = $entityManager->getRepository(Etudiant::class)->getEtudiantsByGroupe($idGroupe);
-            
-            foreach($etudiants as $etudiant){
-                print_r($etudiant);
-                $sql = "INSERT INTO `participe` (`ine`, `id_session`, `presence`, `code_emargement`) VALUES (:ine, :id_session, :presence, :code_emargement)";
-                $stmt = $entityManager->getConnection()->prepare($sql);
-                $stmt->execute([
-                    'ine' => $etudiant['ine'],
-                    'id_session' => $session->getId(),
-                    'presence' => 0,
-                    'code_emargement' => "452123125"
-                ]);
+                    // Génération du code d'emargement
+                    $caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,;:!#@^';
+                    $longueur = 15;
+                    $code_emargement = substr(str_shuffle(str_repeat($caracteres, $longueur)), 0, $longueur);
 
+                    //Insertion dans la table participe du code d'emargement
+                    $sql = "UPDATE `participe` SET `presence` = '0', `code_emargement` = :code_emargement WHERE `participe`.`ine` = :ine AND `participe`.`id_session` = :id_session";
+                    $statement = $entityManager->getConnection()->prepare($sql);
+                    $statement->execute([
+                        'ine' => $etudiant->getIne(),
+                        'id_session' => $session->getId(),
+                        'code_emargement' => $code_emargement                        
+                    ]);
+                    
+
+                    
+                    //var_dump($result); 
+
+                    // $statement->execute([
+                    //     'ine' => $etudiant->getIne(),
+                    //     'id_session' => ($entityManager->getRepository(Session::class)->findLastSession()),
+                    //     'presence' => 0,
+                    //     'code_emargement' => $code_emargement                        
+                    // ]);
+
+                }
             }
         }
-
-        $entityManager->persist($session);
-        $entityManager->flush();
+        //$entityManager->flush();
 
         $response = new Response();
         $response->setStatusCode(Response::HTTP_CREATED);
