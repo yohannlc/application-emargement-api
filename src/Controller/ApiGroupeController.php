@@ -117,6 +117,13 @@ class ApiGroupeController extends AbstractController{
     #[Route('/groupe/creation', name: 'groupe',methods: ['POST'])]
     public function createGroupe(Request $request): Response
     {
+        $response = new Response();
+        $response->setStatusCode(Response::HTTP_CREATED);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Methods', 'POST,GET,OPTIONS');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+
         $data = json_decode($request->getContent(), true);
         $nom = $data['nom'];
 
@@ -135,12 +142,6 @@ class ApiGroupeController extends AbstractController{
         $entityManager->persist($groupe);
         $entityManager->flush();
     
-        $response = new Response();
-        $response->setStatusCode(Response::HTTP_CREATED);
-        $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Methods', 'POST,GET,OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
-        $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
 
