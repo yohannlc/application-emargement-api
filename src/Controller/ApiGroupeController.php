@@ -119,7 +119,6 @@ class ApiGroupeController extends AbstractController{
     {
         $response = new Response();
         $response->setStatusCode(Response::HTTP_CREATED);
-        $response->headers->set('Content-Type', 'application/json');
         $response->headers->set('Access-Control-Allow-Origin', '*');
 
 
