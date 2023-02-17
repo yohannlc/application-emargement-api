@@ -113,37 +113,38 @@ class ApiSessionController extends AbstractController{
             foreach($idIntervenants as $idIntervenant){
                 $session->addIdStaff($entityManager->getRepository(Staff::class)->find($idIntervenant));
             }
-            
+
             foreach($idGroupes as $idGroupe){
                 $groupe = $entityManager->getRepository(Groupe::class)->find($idGroupe);
                 $session->addIdGroupe($groupe);
                 $etudiants = $entityManager->getRepository(Etudiant::class)->getEtudiantsByGroupe($idGroupe);
+
+                $codes_emargement = array();
                 
                 foreach($etudiants as $etudiant){
+                    $code_emargement = substr(str_shuffle(str_repeat($caracteres, $longueur)), 0, $longueur);
+                    $codes_emargement[$etudiant['ine']] = $code_emargement;
                     $etudiant = $entityManager->getRepository(Etudiant::class)->find($etudiant['ine']);
                     $session->addIne($etudiant);
+                    
                 }
                 $entityManager->persist($session);
                 $entityManager->flush();
 
-                foreach($etudiants as $etudiant){
-                    // Génération du code d'emargement
-                    $code_emargement = substr(str_shuffle(str_repeat($caracteres, $longueur)), 0, $longueur);
-
-                    //Insertion dans la table participe du code d'emargement
-                    $sql = "UPDATE `participe` SET `presence` = '0', `code_emargement` = :code_emargement WHERE `participe`.`ine` = :ine AND `participe`.`id_session` = :id_session";
-                    $statement = $entityManager->getConnection()->prepare($sql);
-                    $statement->execute([
-                        'ine' => $etudiant->getIne(),
-                        'id_session' => $session->getId(),
-                        'code_emargement' => $code_emargement                        
-                    ]);
-
+                $sql = "UPDATE `participe` SET `presence` = '0', `code_emargement` = CASE `ine` ";
+                $params = array();
+                foreach ($etudiants as $etudiant) {
+                    $sql .= "WHEN :ine{$etudiant['ine']} THEN :code_emargement{$etudiant['ine']} ";
+                    $params["ine{$etudiant['ine']}"] = $etudiant['ine'];
+                    $params["code_emargement{$etudiant['ine']}"] = $codes_emargement[$etudiant['ine']];
                 }
+                $sql .= "END WHERE `id_session` = :id_session";
+                $params['id_session'] = $session->getId();
+                
+                $statement = $entityManager->getConnection()->prepare($sql);
+                $statement->execute($params);
             }
         }
-        //$entityManager->flush();
-
         $response = new Response();
         $response->setStatusCode(Response::HTTP_CREATED);
         $response->headers->set('Content-Type', 'application/json');
