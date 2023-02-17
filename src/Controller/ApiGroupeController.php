@@ -120,9 +120,8 @@ class ApiGroupeController extends AbstractController{
         $response = new Response();
         $response->setStatusCode(Response::HTTP_CREATED);
         $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Methods', 'POST,GET,OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
         $response->headers->set('Access-Control-Allow-Origin', '*');
+
 
         $data = json_decode($request->getContent(), true);
         $nom = $data['nom'];
