@@ -66,37 +66,42 @@ class ApiSessionController extends AbstractController{
     #[Route('/session/create', name: 'create_session',methods: ['POST'])]
     public function createSession(Request $request){
         $entityManager = $this->doctrine->getManager();
-
-        $data = json_decode($request->getContent(), true);
-
-        $date = new DateTime($data['date']);
-        $heureDebut = new DateTime($data['heure_debut']);
-        $heureFin = new DateTime($data['heure_fin']);
-        $idMatiere = $entityManager->getRepository(Matiere::class)->find($data['id_matiere']);
-        $type = $entityManager->getRepository(Type::class)->find($data['type']);
-        $idGroupes = $data['idGroupes'];
-        $idSalles = $data['idSalles'];
-        $idIntervenants = $data['idIntervenants'];
-
+        $data = json_decode($request->getContent(), true);        
+        // Création de la session
         $session = new Session();
 
-        if($date == null){
+        // Variables pour la génération du code d'emargement
+        $longueur = 15;                    
+        $caracteres = ',;:!#@^ABCDEFGHIJKLMNOPQRSTUVWXYZ,;:!#@^abcdefghijklmnopqrstuvwxyz,;:!#@^0123456789,;:!#@^';
+
+        // Vérification des données de la requête
+        if($data['date'] == null && !preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/', $data['date'])) {
             throw new BadRequestHttpException("La date n'est pas valide");
-        }elseif($heureDebut == null){
+        }elseif($data['heure_debut'] == null && !preg_match('/^[0-9]{2}:[0-9]{2}:[0-9]{2}$/', $data['heure_debut'])){
             throw new BadRequestHttpException("L'heure de début n'est pas valide");
-        }elseif($heureFin == null){
+        }elseif($data['heure_fin'] == null && !preg_match('/^[0-9]{2}:[0-9]{2}:[0-9]{2}$/', $data['heure_fin'])){
             throw new BadRequestHttpException("L'heure de fin n'est pas valide");
-        }elseif($idMatiere == null){
+        }elseif($data['id_matiere'] == null && !preg_match('/^[0-9]+$/', $data['id_matiere'])){
             throw new BadRequestHttpException("La matière n'est pas valide");
-        }elseif($type == null){
+        }elseif($data['type'] == null && !preg_match('/^[a-zA-Z]+$/', $data['type'])){
             throw new BadRequestHttpException("Le type n'est pas valide");
-        }elseif($idGroupes == null){
+        }elseif($data['idGroupes'] == null && !preg_match('/^[0-9]+$/', $data['idGroupes'])){
             throw new BadRequestHttpException("Le groupe n'est pas valide");
-        }elseif($idSalles == null){
+        }elseif($data['idSalles'] == null && !preg_match('/^[0-9]+$/', $data['idSalles'])){
             throw new BadRequestHttpException("La salle n'est pas valide");
-        }elseif($idIntervenants == null){
+        }elseif($data['idIntervenants'] == null && !preg_match('/^[0-9]+$/', $data['idIntervenants'])){
             throw new BadRequestHttpException("L'intervenant n'est pas valide");
         }else{
+            // Récupération des données de la requête
+            $date = new DateTime($data['date']);
+            $heureDebut = new DateTime($data['heure_debut']);
+            $heureFin = new DateTime($data['heure_fin']);
+            $idMatiere = $entityManager->getRepository(Matiere::class)->find($data['id_matiere']);
+            $type = $entityManager->getRepository(Type::class)->find($data['type']);
+            $idGroupes = $data['idGroupes'];
+            $idSalles = $data['idSalles'];
+            $idIntervenants = $data['idIntervenants'];
+
             $session->setDate($date);
             $session->setHeureDebut($heureDebut);
             $session->setHeureFin($heureFin);
@@ -108,25 +113,21 @@ class ApiSessionController extends AbstractController{
             foreach($idIntervenants as $idIntervenant){
                 $session->addIdStaff($entityManager->getRepository(Staff::class)->find($idIntervenant));
             }
+            
             foreach($idGroupes as $idGroupe){
                 $groupe = $entityManager->getRepository(Groupe::class)->find($idGroupe);
                 $session->addIdGroupe($groupe);
                 $etudiants = $entityManager->getRepository(Etudiant::class)->getEtudiantsByGroupe($idGroupe);
-
-                // Création de la session et de son id
-                $entityManager->persist($session);
-                $entityManager->flush();
                 
                 foreach($etudiants as $etudiant){
                     $etudiant = $entityManager->getRepository(Etudiant::class)->find($etudiant['ine']);
-
                     $session->addIne($etudiant);
-                    $entityManager->persist($session);
-                    $entityManager->flush();
+                }
+                $entityManager->persist($session);
+                $entityManager->flush();
 
+                foreach($etudiants as $etudiant){
                     // Génération du code d'emargement
-                    $caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789,;:!#@^';
-                    $longueur = 15;
                     $code_emargement = substr(str_shuffle(str_repeat($caracteres, $longueur)), 0, $longueur);
 
                     //Insertion dans la table participe du code d'emargement
@@ -137,17 +138,6 @@ class ApiSessionController extends AbstractController{
                         'id_session' => $session->getId(),
                         'code_emargement' => $code_emargement                        
                     ]);
-                    
-
-                    
-                    //var_dump($result); 
-
-                    // $statement->execute([
-                    //     'ine' => $etudiant->getIne(),
-                    //     'id_session' => ($entityManager->getRepository(Session::class)->findLastSession()),
-                    //     'presence' => 0,
-                    //     'code_emargement' => $code_emargement                        
-                    // ]);
 
                 }
             }
