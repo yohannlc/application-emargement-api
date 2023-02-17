@@ -109,8 +109,8 @@ class Session
      * )
      */
     private $idGroupe = array();
-
-    /**
+    
+     /**
      * @var \Doctrine\Common\Collections\Collection
      *
      * @ORM\ManyToMany(targetEntity="Etudiant", mappedBy="idSession")
