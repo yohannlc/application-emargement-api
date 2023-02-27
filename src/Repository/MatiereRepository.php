@@ -21,6 +21,14 @@ class MatiereRepository extends ServiceEntityRepository
         parent::__construct($registry, Matiere::class);
     }
 
+    // Récupère toutes les matières et les renvoie sous forme de tableau
+    public function findAll(): array
+    {
+        return $this->createQueryBuilder('ma')
+                ->getQuery()
+                ->getArrayResult();
+    }
+
     public function save(Matiere $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);

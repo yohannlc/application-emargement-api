@@ -21,5 +21,36 @@ class ApiMatiereController extends AbstractController{
         $this->doctrine = $doctrine;
     }
 
+    /**
+     * Récupérer les types de matières
+     * 
+     * @OA\Response(
+     *    response=200,
+     *    description="Retourne la liste des matières",
+     *    @OA\JsonContent(
+     *       type="array",
+     *       @OA\Items(
+     *         type="object",
+     *           @OA\Property(property="id", type="integer"),
+     *           @OA\Property(property="matiere", type="string")
+     *       )
+     *    )
+     * )
+     * 
+     * @OA\Tag(name="Matiere")
+     */
+    #[Route('/matieres', name: 'matiere',methods: ['GET'])]
+    public function getAllMatieres(): Response
+    {
+        $matieres = $this->doctrine->getRepository(Matiere::class)->findAll();
+
+        $response = new Response();
+        $response->setContent(json_encode($matieres));
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        return $response;
+    }
+
+
     
 }
