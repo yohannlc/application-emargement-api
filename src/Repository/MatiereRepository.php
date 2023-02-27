@@ -21,10 +21,11 @@ class MatiereRepository extends ServiceEntityRepository
         parent::__construct($registry, Matiere::class);
     }
 
-    // Récupère toutes les matières et les renvoie sous forme de tableau
+    // Récupère toutes les matières et les renvoie sous forme de tableau dans l'ordre alphabétique
     public function findAll(): array
     {
         return $this->createQueryBuilder('ma')
+                ->orderBy('ma.matiere', 'ASC')
                 ->getQuery()
                 ->getArrayResult();
     }
