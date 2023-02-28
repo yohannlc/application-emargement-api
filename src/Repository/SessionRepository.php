@@ -39,6 +39,25 @@ class SessionRepository extends ServiceEntityRepository
         }
     }
 
+    public function getSessionsDuJour(): array
+    {
+        $today = new \DateTime();
+        $qb = $this->createQueryBuilder('s');
+        $qb->select('s.id', 's.heureDebut', 's.heureFin', 'm.matiere as matiere', 'GROUP_CONCAT(sa.salle SEPARATOR ", ") as salles', 'GROUP_CONCAT(CONCAT(UPPER(st.nom)," ",st.prenom) SEPARATOR ", ") AS intervenants', 'GROUP_CONCAT(g.groupe SEPARATOR ", ") as groupes');
+        $qb->where('s.date = :dateDuJour');
+        $qb->leftJoin('s.idMatiere', 'm');
+        $qb->leftJoin('s.idSalle', 'sa');
+        $qb->leftJoin('s.idStaff', 'st');
+        $qb->leftJoin('s.idGroupe', 'g');
+        $qb->setParameter('dateDuJour', '2023-02-03');
+        $qb->groupBy('s.id');
+        $qb->orderBy('s.heureDebut', 'ASC');
+        $query = $qb->getQuery();
+        return $query->getArrayResult();
+    }
+        
+
+
 //    /**
 //     * @return Session[] Returns an array of Session objects
 //     */
