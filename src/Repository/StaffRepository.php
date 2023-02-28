@@ -47,6 +47,15 @@ class StaffRepository extends ServiceEntityRepository
         }
     }
 
+    public function getAllIntervenants(): array
+    {
+        return $this->createQueryBuilder('st')
+            ->select('st.id', 'st.nom', 'st.prenom')
+            ->andWhere('st.isAdmin = 0')
+            ->getQuery()
+            ->getArrayResult();
+    }
+
 //    /**
 //     * @return Staff[] Returns an array of Staff objects
 //     */
