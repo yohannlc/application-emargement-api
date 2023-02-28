@@ -43,19 +43,55 @@ class SessionRepository extends ServiceEntityRepository
     {
         $today = new \DateTime();
         $qb = $this->createQueryBuilder('s');
-        $qb->select('s.id', 's.heureDebut', 's.heureFin', 'm.matiere as matiere', 'GROUP_CONCAT(sa.salle SEPARATOR ", ") as salles', 'GROUP_CONCAT(CONCAT(UPPER(st.nom)," ",st.prenom) SEPARATOR ", ") AS intervenants', 'GROUP_CONCAT(g.groupe SEPARATOR ", ") as groupes');
+        $qb->select('s.id', 's.heureDebut', 's.heureFin', 'm.matiere', 'sa.salle AS salles', "CONCAT(UPPER(st.nom),' ',st.prenom) AS intervenants", 'g.groupe AS groupes');
         $qb->where('s.date = :dateDuJour');
         $qb->leftJoin('s.idMatiere', 'm');
         $qb->leftJoin('s.idSalle', 'sa');
         $qb->leftJoin('s.idStaff', 'st');
         $qb->leftJoin('s.idGroupe', 'g');
+        //$qb->setParameter('dateDuJour', $today->format('Y-m-d'));
         $qb->setParameter('dateDuJour', '2023-02-03');
-        $qb->groupBy('s.id');
         $qb->orderBy('s.heureDebut', 'ASC');
         $query = $qb->getQuery();
-        return $query->getArrayResult();
-    }
+
+        $data = $query->getArrayResult();
+
+        // Concatenate staff names
+        foreach ($data as &$row) {
+            if(!isset($row['intervenants'])){
+                $staffNames = [];
+                foreach ($row['intervenants'] as $staff) {
+                    $staffNames[] = strtoupper($staff['nom']) . ' ' . $staff['prenom'];
+                }
+                $row['intervenants'] = implode(', ', $staffNames);
+            }
+        }
         
+        // Concatenate room names
+        foreach ($data as &$row) {
+            if(!isset($row['salles'])){
+                $roomNames = [];
+                foreach ($row['salles'] as $room) {
+                    $roomNames[] = $room['salles'];
+                }
+                $row['salles'] = implode(', ', $roomNames);
+            }
+        }
+        
+        // Concatenate group names
+        foreach ($data as &$row) {
+            if(!isset($row['groupes'])){
+                $groupNames = [];
+                foreach ($row['groupes'] as $group) {
+                    $groupNames[] = $group['groupes'];
+                }
+                $row['groupes'] = implode(', ', $groupNames);
+            }
+            
+        }
+        
+        return $data;
+    }
 
 
 //    /**
