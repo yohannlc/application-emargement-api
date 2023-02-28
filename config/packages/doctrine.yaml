@@ -15,6 +15,11 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Entity'
                 prefix: 'App\Entity'
                 alias: App
+        dql:
+            datetime_functions:
+                DATE_FORMAT: DoctrineExtensions\Query\Mysql\DateFormat
+            string_functions:
+                GROUP_CONCAT: DoctrineExtensions\Query\Mysql\GroupConcat
 
 when@test:
     doctrine:
