@@ -16,10 +16,9 @@ Check your environnement
 ```
 symfony check:requirements
 ```
-Use composer to install the missing dependancies, and install nelmio for the API documentation
+Use composer to install the missing dependancies.
 ```
 composer install
-composer require nelmio/api-doc-bundle
 ```
 Create the .env file. Update the DATABASE_URL variable with your database credentials
 ```
