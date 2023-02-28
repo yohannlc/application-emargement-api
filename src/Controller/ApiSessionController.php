@@ -200,4 +200,66 @@ class ApiSessionController extends AbstractController{
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Récupérer les sessions du jour 
+     * 
+     * @OA\Response(
+     *    response=200,
+     *    description="Retourne la liste des sessions du jour",
+     *    @OA\JsonContent(
+     *       type="object",
+     *          @OA\Property(property="id", type="int"),
+     *          @OA\Property(property="date", type="string"),
+     *          @OA\Property(property="heureDebut", type="string"),
+     *          @OA\Property(property="heureFin", type="string"),
+     *          @OA\Property(property="idGroupe", type="int"),
+     *          @OA\Property(property="idSalle", type="int"),
+     *          @OA\Property(property="idMatiere", type="int"),
+     *          @OA\Property(property="idEnseignant", type="int"),
+     *          @OA\Property(property="idType", type="int"),
+     *    )
+     * )
+     * 
+     * @OA\Tag(name="Session")
+     */
+    #[Route('/sessions', name: 'sessions', methods: ['GET'])]
+    public function getSessionsDuJour(): Response
+    {
+        $sessions = $this->doctrine->getRepository(Session::class)->getSessionsDuJour();
+
+        $response = new Response();
+        $response->setContent(json_encode($sessions));
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        return $response;
+    }
+
+
 }
