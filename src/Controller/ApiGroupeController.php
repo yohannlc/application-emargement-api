@@ -206,7 +206,7 @@ class ApiGroupeController extends AbstractController{
      * )
      * 
      * @OA\Response(
-     *   response=404,
+     *   response=400,
      *   description="Groupe ou étudiant introuvable"
      * )
      * 
