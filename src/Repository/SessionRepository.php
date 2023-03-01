@@ -53,7 +53,16 @@ class SessionRepository extends ServiceEntityRepository
         $qb->setParameter('dateDuJour', (new \DateTime())->format('Y-m-d'));
         $qb->orderBy('s.heureDebut', 'ASC');
         $query = $qb->getQuery();
-        return $query->getArrayResult();
+        $results = $query->getArrayResult();
+
+        // Convertir les chaînes en tableaux
+        foreach ($results as &$result) {
+            $result['intervenants'] = explode(', ', $result['intervenants']);
+            $result['salles'] = explode(', ', $result['salles']);
+            $result['groupes'] = explode(', ', $result['groupes']);
+        }
+
+        return $results;
     }
 
 
