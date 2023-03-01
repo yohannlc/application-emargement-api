@@ -148,6 +148,9 @@ class ApiSessionController extends AbstractController{
                 $session->addIdStaff($entityManager->getRepository(Staff::class)->find($idIntervenant));
             }
 
+            $sql = "UPDATE `participe` SET `presence` = '0', `code_emargement` = CASE `ine` ";
+            $params = array();
+
             foreach($idGroupes as $idGroupe){
                 $groupe = $entityManager->getRepository(Groupe::class)->find($idGroupe);
                 $session->addIdGroupe($groupe);
@@ -165,19 +168,16 @@ class ApiSessionController extends AbstractController{
                 $entityManager->persist($session);
                 $entityManager->flush();
 
-                $sql = "UPDATE `participe` SET `presence` = '0', `code_emargement` = CASE `ine` ";
-                $params = array();
                 foreach ($etudiants as $etudiant) {
                     $sql .= "WHEN :ine{$etudiant['ine']} THEN :code_emargement{$etudiant['ine']} ";
                     $params["ine{$etudiant['ine']}"] = $etudiant['ine'];
                     $params["code_emargement{$etudiant['ine']}"] = $codes_emargement[$etudiant['ine']];
                 }
-                $sql .= "END WHERE `id_session` = :id_session";
-                $params['id_session'] = $session->getId();
-                
-                $statement = $entityManager->getConnection()->prepare($sql);
-                $statement->execute($params);
             }
+            $sql .= "END WHERE `id_session` = :id_session";
+            $params['id_session'] = $session->getId();
+            $stmt = $entityManager->getConnection()->prepare($sql);
+            $stmt->execute($params);
         }
         $response = new Response();
         $response->setStatusCode(Response::HTTP_CREATED);
