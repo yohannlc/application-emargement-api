@@ -346,9 +346,11 @@ class ApiGroupeController extends AbstractController{
         }
     
         $groupe->setGroupe($nom);
+
         // On supprime tous les étudiants du groupe
-        $groupe->removeAllEtudiant();
-    
+        $groupe->removeAllEtudiants();
+
+        // Puis on ajoute les étudiants passés en paramètre    
         foreach ($ines as $ine) {
             $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
             if (!$etudiant) {

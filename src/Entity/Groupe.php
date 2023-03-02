@@ -125,9 +125,13 @@ class Groupe
         return $this;
     }
 
-    public function removeAllEtudiant(): self
+    // supprimer tous les étudiants du groupe
+    public function removeAllEtudiants(): self
     {
-        $this->ine->clear();
+        foreach ($this->ine as $etudiant) {
+            $this->removeEtudiant($etudiant);
+        }
+
         return $this;
     }
 
