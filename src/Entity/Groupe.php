@@ -125,6 +125,12 @@ class Groupe
         return $this;
     }
 
+    public function removeAllEtudiant(): self
+    {
+        $this->ine->clear();
+        return $this;
+    }
+
     public function hasEtudiant(Etudiant $etudiant): bool
     {
         return $this->ine->contains($etudiant);

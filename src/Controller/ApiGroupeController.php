@@ -259,9 +259,118 @@ class ApiGroupeController extends AbstractController{
         return $response;
     }
 
+    /** 
+     * Supprimer un groupe
+     * 
+     * @OA\Response(
+     *    response=204,
+     *    description="Groupe supprimé"
+     * )
+     * 
+     * @OA\Response(
+     *    response=400,
+     *    description="Groupe introuvable"
+     * )
+     * 
+     * @OA\RequestBody(
+     *   request="SuppressionGroupe",
+     *   required=true,
+     *   @OA\JsonContent(
+     *     @OA\Property(property="id", type="integer")
+     *   )
+     * )
+     * 
+     * @OA\Tag(name="Groupe")
+     */
+    #[Route('/groupe/suppression', name: 'groupe_suppression', methods: ['DELETE'])]
+    public function removeGroupe(Request $request)
+    {
+        $data = json_decode($request->getContent(), true);
+        $idGroupe = $data['id'];
+    
+        $groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['id' => $idGroupe]);
+        if (!$groupe) {
+            throw $this->createNotFoundException(sprintf('Groupe non trouvé'));
+        }
+    
+        $entityManager = $this->doctrine->getManager();
+        $entityManager->remove($groupe);
+        $entityManager->flush();
+    
+        $response = new Response();
+        $response->setStatusCode(Response::HTTP_NO_CONTENT);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Methods', 'DELETE,GET,OPTIONS');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+    
+        return $response;
+    }
 
-
-
+    /**
+     * Mise à jour d'un groupe
+     * 
+     * @OA\Response(
+     *    response=200,
+     *    description="Groupe mis à jour"
+     * )
+     * 
+     * @OA\Response(
+     *    response=400,
+     *    description="Groupe introuvable"
+     * )
+     * 
+     * @OA\RequestBody(
+     *   request="MiseAJourGroupe",
+     *   required=true,
+     *   @OA\JsonContent(
+     *     @OA\Property(property="id", type="integer"),
+     *     @OA\Property(property="nom", type="string"),
+     *     @OA\Property(property="ines", type="array", @OA\Items(type="string", example="A12345"))
+     *   )
+     * )
+     * 
+     * @OA\Tag(name="Groupe")
+     */
+    #[Route('/groupe/miseajour', name: 'groupe_miseajour', methods: ['PUT'])]
+    public function updateGroupe(Request $request)
+    {
+        $data = json_decode($request->getContent(), true);
+        $idGroupe = $data['id'];
+        $nom = $data['nom'];
+        $ines = $data['ines'];
+    
+        $groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['id' => $idGroupe]);
+        if (!$groupe) {
+            throw $this->createNotFoundException(sprintf('Groupe non trouvé'));
+        }
+    
+        $groupe->setGroupe($nom);
+        // On supprime tous les étudiants du groupe
+        $groupe->removeAllEtudiant();
+    
+        foreach ($ines as $ine) {
+            $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
+            if (!$etudiant) {
+                throw $this->createNotFoundException(sprintf('Etudiant non trouvé'));
+            }else{
+                $groupe->addEtudiant($etudiant);
+            }
+        }
+    
+        $entityManager = $this->doctrine->getManager();
+        $entityManager->persist($groupe);
+        $entityManager->flush();
+    
+        $response = new Response();
+        $response->setStatusCode(Response::HTTP_OK);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Methods', 'PUT,GET,OPTIONS');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+    
+        return $response;
+    }
 
 }
 ?>

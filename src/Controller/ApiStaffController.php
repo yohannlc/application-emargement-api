@@ -32,7 +32,8 @@ class ApiStaffController extends AbstractController{
      *       @OA\Items(
      *        type="object",
      *          @OA\Property(property="id", type="int"),
-     *          @OA\Property(property="nom", type="string")
+     *          @OA\Property(property="nom", type="string"),
+     *          @OA\Property(property="prenom", type="string")
      *      )
      *    )
      * )
