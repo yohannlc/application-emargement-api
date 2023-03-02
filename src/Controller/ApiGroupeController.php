@@ -108,7 +108,8 @@ class ApiGroupeController extends AbstractController{
      *   description="Nom du groupe",
      *   @OA\JsonContent(
      *     type="object",
-     *     @OA\Property(property="nom",type="string")
+     *     @OA\Property(property="nom",type="string"),
+     *     @OA\Property(property="ines",type="array",@OA\Items(type="string"))
      *   )
      * )
      * 
