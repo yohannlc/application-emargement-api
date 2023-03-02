@@ -124,6 +124,7 @@ class ApiGroupeController extends AbstractController{
 
         $data = json_decode($request->getContent(), true);
         $nom = $data['nom'];
+        $ines = $data['ines'];
 
         if (!$nom) {
             throw new BadRequestHttpException('Nom de groupe manquant');
@@ -135,11 +136,29 @@ class ApiGroupeController extends AbstractController{
         if ($test_existance) {
             throw new BadRequestHttpException('Ce groupe existe déjà');
         }
+
+        foreach ($ines as $ine) {
+            echo $ine;
+            $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
+
+            if (!$etudiant) {
+                throw $this->createNotFoundException(sprintf('L\'étudiant avec INE %s n\'a pas été trouvé.', $ine));
+            }
+
+            $groupe->addEtudiant($etudiant);
+        }
     
         $entityManager = $this->doctrine->getManager();
         $entityManager->persist($groupe);
         $entityManager->flush();
-    
+        
+        $response = new Response();
+        $response->setStatusCode(Response::HTTP_CREATED);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Methods', 'POST,GET,OPTIONS');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+
         return $response;
     }
 
