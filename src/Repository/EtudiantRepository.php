@@ -36,7 +36,7 @@ class EtudiantRepository extends ServiceEntityRepository
     public function getEtudiantsByNomPrenom($nom_prenom): array
     {
         return $this->createQueryBuilder('et')
-            ->select('et.nom', 'et.prenom', 'p.promo')
+            ->select('et.nom', 'et.prenom', 'p.promo', 'et.ine')
             ->leftJoin('et.promo', 'p')
             ->andWhere('et.nom LIKE :nom_prenom')
             ->orWhere('et.prenom LIKE :nom_prenom')
