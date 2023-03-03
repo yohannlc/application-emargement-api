@@ -34,12 +34,12 @@ class ApiSessionController extends AbstractController{
         $this->doctrine = $doctrine;
     }
 
-        /**
-     * Récupérer les sessions du jour 
+    /**
+     * Récupérer les sessions en fonction des paramètres
      * 
      * @OA\Response(
      *    response=200,
-     *    description="Retourne la liste des sessions du jour",
+     *    description="Retourne la liste des sessions en fonction des paramètres",
      *    @OA\JsonContent(
      *       type="object",
      *          @OA\Property(property="id", type="int"),
@@ -54,12 +54,44 @@ class ApiSessionController extends AbstractController{
      *    )
      * )
      * 
+     * @OA\Parameter(
+     *   name="date",
+     *   in="path",
+     *   description="Date au format YYYY-MM-JJ. Si inutilisé, mettre à 0",
+     *   required=true,
+     *   @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Parameter(
+     *   name="idGroupe",
+     *   in="path",
+     *   description="Id du groupe. Si inutilisé, mettre à 0",
+     *   required=true,
+     *   @OA\Schema(type="integer")
+     * )
+     * 
+     * @OA\Parameter(
+     *   name="idIntervenant",
+     *   in="path",
+     *   description="Id de l'intervenant. Si inutilisé, mettre à 0",
+     *   required=true,
+     *   @OA\Schema(type="integer")
+     * )
+     * 
+     * @OA\Parameter(
+     *   name="idMatiere",
+     *   in="path",
+     *   description="Id de la matière. Si inutilisé, mettre à 0",
+     *   required=true,  
+     *   @OA\Schema(type="integer")
+     * )
+     * 
      * @OA\Tag(name="Session")
      */
-    #[Route('/sessions', name: 'sessions', methods: ['GET'])]
-    public function getSessionsDuJour(): Response
+    #[Route('/sessions/date={date}/groupe={idGroupe}/matiere={idMatiere}/intervenant={idIntervenant}', name: 'sessions', methods: ['GET'])]
+    public function getSessions($date=null,$idGroupe=null,$idIntervenant=null,$idMatiere): Response
     {
-        $sessions = $this->doctrine->getRepository(Session::class)->getSessionsDuJour();
+        $sessions = $this->doctrine->getRepository(Session::class)->getSessions($date,$idGroupe,$idIntervenant,$idMatiere);
 
         $response = new Response();
         $response->setContent(json_encode($sessions));
