@@ -164,60 +164,6 @@ class ApiGroupeController extends AbstractController{
     }
 
     /**
-     * Ajouter des étudiants à un groupe
-     *
-     * @OA\Response(
-     *  response=201,
-     *   description="Etudiants ajoutés au groupe"
-     * )
-     *
-     * @OA\RequestBody(
-     *     description="Données à envoyer",
-     *     required=true,
-     *     @OA\JsonContent(
-     *         required={"idGroupe","ines"},
-     *         @OA\Property(property="idGroupe", type="integer", example="1"),
-     *         @OA\Property(property="ines", type="array", @OA\Items(type="string", example="A12345"))
-     *     )
-     * )
-     *
-     * @OA\Tag(name="Groupe")
-     */
-    #[Route('/groupe/etudiant/ajout', name: 'groupe_ajout_etudiants', methods: ['POST'])]
-    public function addEtudiantsToGroupe(Request $request): Response
-    {
-        $data = json_decode($request->getContent(), true);
-        $idGroupe = $data['idGroupe'];
-        $ines = $data['ines'];
-
-        $groupe = $this->doctrine->getRepository(Groupe::class)->find($idGroupe);
-
-        foreach ($ines as $ine) {
-            echo $ine;
-            $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
-
-            if (!$etudiant) {
-                throw $this->createNotFoundException(sprintf('L\'étudiant avec INE %s n\'a pas été trouvé.', $ine));
-            }
-
-            $groupe->addEtudiant($etudiant);
-        }
-
-        $entityManager = $this->doctrine->getManager();
-        $entityManager->persist($groupe);
-        $entityManager->flush();
-
-        $response = new Response();
-        $response->setStatusCode(Response::HTTP_CREATED);
-        $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Methods', 'POST,GET,OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-
-        return $response;
-    }
-
-    /**
      * Supprimer un étudiant d'un groupe
      * 
      * @OA\Response(
