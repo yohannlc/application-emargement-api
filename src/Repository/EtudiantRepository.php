@@ -33,14 +33,13 @@ class EtudiantRepository extends ServiceEntityRepository
     }    
 
     // Récupère tous les étudiants dont le nom ou le prénom contient la chaîne de caractères passée en paramètre
-    public function getEtudiantsByNomPrenom($nom_prenom): array
+    public function getEtudiantsByNomPrenom($string): array
     {
         return $this->createQueryBuilder('et')
-            ->select('et.nom', 'et.prenom', 'p.promo', 'et.ine')
-            ->leftJoin('et.promo', 'p')
-            ->andWhere('et.nom LIKE :nom_prenom')
-            ->orWhere('et.prenom LIKE :nom_prenom')
-            ->setParameter('nom_prenom', '%' . $nom_prenom . '%')
+            ->select('et.nom', 'et.prenom', 'et.ine')
+            ->andWhere('et.nom LIKE :string')
+            ->orWhere('et.prenom LIKE :string')
+            ->setParameter('string', $string . '%')
             ->getQuery()
             ->getArrayResult();
     }
