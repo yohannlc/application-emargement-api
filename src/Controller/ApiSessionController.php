@@ -86,12 +86,20 @@ class ApiSessionController extends AbstractController{
      *   @OA\Schema(type="integer")
      * )
      * 
+     * @OA\Parameter(
+     *   name="idSalle",
+     *   in="path",
+     *   description="Id de la salle. Si inutilisé, mettre à 0",
+     *   required=true,
+     *   @OA\Schema(type="integer")
+     * )
+     * 
      * @OA\Tag(name="Session")
      */
-    #[Route('/sessions/date={date}/groupe={idGroupe}/matiere={idMatiere}/intervenant={idIntervenant}', name: 'sessions', methods: ['GET'])]
-    public function getSessions($date=null,$idGroupe=null,$idIntervenant=null,$idMatiere): Response
+    #[Route('/sessions/date={date}/groupe={idGroupe}/matiere={idMatiere}/intervenant={idIntervenant}/salle={idSalle}', name: 'sessions', methods: ['GET'])]
+    public function getSessions($date=null,$idGroupe=null,$idIntervenant=null,$idMatiere=null, $idSalle=null): Response
     {
-        $sessions = $this->doctrine->getRepository(Session::class)->getSessions($date,$idGroupe,$idIntervenant,$idMatiere);
+        $sessions = $this->doctrine->getRepository(Session::class)->getSessions($date,$idGroupe,$idIntervenant,$idMatiere, $idSalle);
 
         $response = new Response();
         $response->setContent(json_encode($sessions));

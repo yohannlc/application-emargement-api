@@ -39,28 +39,32 @@ class SessionRepository extends ServiceEntityRepository
         }
     }
 
-    public function getSessions($date,$idGroupe,$idIntervenant,$idMatiere): array
+    public function getSessions($date,$idGroupe,$idIntervenant,$idMatiere,$idSalle): array
     {
         $qb = $this->createQueryBuilder('s');
         $qb->select('s.id',"DATE_FORMAT(s.date,'%Y-%m-%d') AS date", "DATE_FORMAT(s.heureDebut,'%H:%i') as heureDebut", "DATE_FORMAT(s.heureFin,'%H:%i') AS heureFin", 'm.matiere', 't.type', "GROUP_CONCAT(DISTINCT sa.salle SEPARATOR ', ') as salles", "GROUP_CONCAT(DISTINCT CONCAT(UPPER(st.nom),' ',st.prenom) SEPARATOR ', ') AS intervenants", "GROUP_CONCAT(DISTINCT g.groupe SEPARATOR ', ') as groupes");
-        if($date != "null" && $date != 0){
+        if($date != 0){
             $qb->where('s.date = :dateDuJour');
             $qb->setParameter('dateDuJour', $date);
         }else{
             $qb->where('s.date = :dateDuJour');
             $qb->setParameter('dateDuJour', (new \DateTime())->format('Y-m-d'));
         }
-        if($idGroupe != "null" && $idGroupe != 0){
+        if($idGroupe != 0){
             $qb->andWhere('g.id = :groupe');
             $qb->setParameter('groupe', $idGroupe);
         }
-        if($idIntervenant != "null" && $idIntervenant != 0){
+        if($idIntervenant != 0){
             $qb->andWhere('st.id = :intervenant');
             $qb->setParameter('intervenant', $idIntervenant);
         }
-        if($idMatiere != "null" && $idMatiere != 0){
+        if($idMatiere != 0){
             $qb->andWhere('m.id = :matiere');
             $qb->setParameter('matiere', $idMatiere);
+        }
+        if($idSalle != 0){
+            $qb->andWhere('sa.id = :salle');
+            $qb->setParameter('salle', $idSalle);
         }
         $qb->leftJoin('s.idMatiere', 'm');
         $qb->leftJoin('s.idSalle', 'sa');
