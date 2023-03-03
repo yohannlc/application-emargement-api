@@ -86,6 +86,32 @@ class SessionRepository extends ServiceEntityRepository
         return $results;
     }
 
+    public function getSessionById($id): array
+    {
+        $qb = $this->createQueryBuilder('s');
+        $qb->select('s.id',"DATE_FORMAT(s.date,'%Y-%m-%d') AS date", "DATE_FORMAT(s.heureDebut,'%H:%i') as heureDebut", "DATE_FORMAT(s.heureFin,'%H:%i') AS heureFin", 'm.matiere', 't.type', "GROUP_CONCAT(DISTINCT sa.salle SEPARATOR ', ') as salles", "GROUP_CONCAT(DISTINCT CONCAT(UPPER(st.nom),' ',st.prenom) SEPARATOR ', ') AS intervenants", "GROUP_CONCAT(DISTINCT g.groupe SEPARATOR ', ') as groupes");
+        $qb->where('s.id = :id');
+        $qb->setParameter('id', $id);
+        $qb->leftJoin('s.idMatiere', 'm');
+        $qb->leftJoin('s.idSalle', 'sa');
+        $qb->leftJoin('s.idStaff', 'st');
+        $qb->leftJoin('s.idGroupe', 'g');
+        $qb->leftJoin('s.type', 't');
+        $qb->groupBy('s.id');
+        $qb->orderBy('s.heureDebut', 'ASC');
+        $query = $qb->getQuery();
+        $results = $query->getArrayResult();
+
+        // Convertir les chaînes en tableaux
+        foreach ($results as &$result) {
+            $result['intervenants'] = explode(', ', $result['intervenants']);
+            $result['salles'] = explode(', ', $result['salles']);
+            $result['groupes'] = explode(', ', $result['groupes']);
+        }
+
+        return $results;
+    }
+
 
 //    /**
 //     * @return Session[] Returns an array of Session objects
