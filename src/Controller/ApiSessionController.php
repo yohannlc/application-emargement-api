@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Validator\Constraints\DateTimeInterface;
 use Doctrine\ORM\Query\ResultSetMapping;
+use Doctrine\DBAL\Connection;
 
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
@@ -149,6 +150,66 @@ class ApiSessionController extends AbstractController{
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
+
+    /**
+     * Récupérer les étudiants d'une session par groupe
+     * 
+     * @OA\Response(
+     *   response=200,
+     *   description="Retourne la liste des étudiants d'une session par groupe",
+     *   @OA\JsonContent(
+     *     type="object",
+     *     @OA\Property(property="nom", type="string"),
+     *     @OA\Property(property="prenom", type="string"),
+     *     @OA\Property(property="presence", type="string")
+     *   )
+     * )
+     * 
+     * @OA\Parameter(
+     *   name="id_session",
+     *   in="path",
+     *   description="Id de la session",
+     *   required=true,
+     *   @OA\Schema(type="integer")
+     * )
+     * 
+     * @OA\Parameter(
+     *   name="id_groupe",
+     *   in="path",
+     *   description="Id du groupe",
+     *   required=true,
+     *   @OA\Schema(type="integer")
+     * )
+     * 
+     * @OA\Tag(name="Session")  
+     * 
+     */
+    // Récupérer les étudiants d'une session par groupe
+    #[Route('/session/{id_session}/groupe/{groupe}/etudiants', name: 'session_etudiants', methods: ['GET'])]
+    public function getEtudiantsByGroupeBySession($id_session, $groupe): Response
+    {
+        $conn = $this->doctrine->getConnection();
+
+        $id_groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['groupe' => $groupe])->getId();
+    
+        $sql = "SELECT et.nom, et.prenom, p.presence
+                FROM etudiant et
+                JOIN fait_partie fp ON fp.ine = et.ine
+                JOIN groupe g ON g.id = fp.id_groupe
+                JOIN participe p ON p.ine = et.ine
+                WHERE g.id = :id_groupe AND p.id_session = :id_session";
+    
+        $stmt = $conn->executeQuery($sql, ['id_session' => $id_session, 'id_groupe' => $id_groupe]);
+    
+        $etudiants = $stmt->fetchAllAssociative();
+    
+        $response = new Response();
+        $response->setContent(json_encode($etudiants));
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        return $response;
+    }
+    
 
     /**
      * Création d'une session
@@ -314,4 +375,7 @@ class ApiSessionController extends AbstractController{
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
+
+
 }
+?>

@@ -120,8 +120,6 @@ class ApiEtudiantController extends AbstractController{
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
-    
-
 }
 
 
