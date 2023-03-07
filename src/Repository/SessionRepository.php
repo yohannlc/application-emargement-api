@@ -46,9 +46,6 @@ class SessionRepository extends ServiceEntityRepository
         if($date != 0){
             $qb->where('s.date = :dateDuJour');
             $qb->setParameter('dateDuJour', $date);
-        }else{
-            $qb->where('s.date = :dateDuJour');
-            $qb->setParameter('dateDuJour', (new \DateTime())->format('Y-m-d'));
         }
         if($idGroupe != 0){
             $qb->andWhere('g.id = :groupe');
@@ -98,7 +95,8 @@ class SessionRepository extends ServiceEntityRepository
         $qb->leftJoin('s.idGroupe', 'g');
         $qb->leftJoin('s.type', 't');
         $qb->groupBy('s.id');
-        $qb->orderBy('s.heureDebut', 'ASC');
+        $qb->orderBy(`date`, 'ASC');
+        $qb->addOrderBy('s.heureDebut', 'ASC');
         $query = $qb->getQuery();
         $results = $query->getArrayResult();
 
