@@ -311,16 +311,21 @@ class ApiSessionController extends AbstractController{
                 $entityManager->persist($session);
                 $entityManager->flush();
 
+                if(empty($etudiants)) $empty = true;
+                else $empty = false;
+
                 foreach ($etudiants as $etudiant) {
                     $sql .= "WHEN :ine{$etudiant['ine']} THEN :code_emargement{$etudiant['ine']} ";
                     $params["ine{$etudiant['ine']}"] = $etudiant['ine'];
                     $params["code_emargement{$etudiant['ine']}"] = $codes_emargement[$etudiant['ine']];
                 }
             }
-            $sql .= "END WHERE `id_session` = :id_session";
-            $params['id_session'] = $session->getId();
-            $stmt = $entityManager->getConnection()->prepare($sql);
-            $stmt->execute($params);
+            if(!$empty){
+                $sql .= "END WHERE `id_session` = :id_session";
+                $params['id_session'] = $session->getId();
+                $stmt = $entityManager->getConnection()->prepare($sql);
+                $stmt->execute($params);
+            }
         }
         $response = new Response();
         $response->setStatusCode(Response::HTTP_CREATED);
