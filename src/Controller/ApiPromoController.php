@@ -22,34 +22,5 @@ class ApiPromoController extends AbstractController
     {
         $this->doctrine = $doctrine;
     }
-
-    /**
-     * Récupérer la liste des promotions
-     * 
-     * @OA\Response(
-     *    response=200,
-     *    description="Retourne la liste des promotions",
-     *    @OA\JsonContent(
-     *       type="array",
-     *       @OA\Items(
-     *         type="object",
-     *         @OA\Property(property="promo", type="integer")
-     *       )
-     *    )
-     * )
-     * 
-     * @OA\Tag(name="Promo")
-     */
-    #[Route('/promos', name: 'promo',methods: ['GET'])]
-    public function getAllPromos(): Response
-    {
-        $promos = $this->doctrine->getRepository(Promo::class)->findAll();
-
-        $response = new Response();
-        $response->setContent(json_encode($promos));
-        $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-        return $response;
-    }
     
 }

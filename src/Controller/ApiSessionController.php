@@ -35,48 +35,6 @@ class ApiSessionController extends AbstractController{
         $this->doctrine = $doctrine;
     }
 
-    /** 
-     * Récupérer une session en fonction de son id
-     * 
-     * @OA\Response(
-     *   response=200,
-     *   description="Retourne la session en fonction de son id",
-     *   @OA\JsonContent(
-     *     type="object",
-     *     @OA\Property(property="id", type="int"),
-     *     @OA\Property(property="date", type="string"),
-     *     @OA\Property(property="heureDebut", type="string"),
-     *     @OA\Property(property="heureFin", type="string"),
-     *     @OA\Property(property="matiere", type="string"),
-     *     @OA\Property(property="type", type="string"),
-     *     @OA\Property(property="salles", type="string"),
-     *     @OA\Property(property="intervenants", type="string"),
-     *     @OA\Property(property="groupes", type="string"),
-     *   )
-     * )
-     * 
-     * @OA\Parameter(
-     *   name="id",
-     *   in="path",
-     *   description="Id de la session",
-     *   required=true,
-     *   @OA\Schema(type="integer")
-     * )
-     * 
-     * @OA\Tag(name="Session")
-     */
-    #[Route('/session/{id}', name: 'session', methods: ['GET'])]
-    public function getSession($id): Response
-    {
-        $session = $this->doctrine->getRepository(Session::class)->getSessionById($id);
-
-        $response = new Response();
-        $response->setContent(json_encode($session));
-        $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-        return $response;
-    }
-
     /**
      * Récupérer les sessions en fonction des paramètres
      * 
@@ -334,54 +292,7 @@ class ApiSessionController extends AbstractController{
         return $response;
     }
 
-    // Supprimer une session
-    /**
-     * Suppression d'une session
-     * 
-     * @OA\Response(
-     *    response=200,
-     *    description="Session supprimée"
-     * )
-     * 
-     * @OA\Response(
-     *   response=400,
-     *   description="Requete invalide"
-     * )
-     * 
-     * @OA\RequestBody(
-     *   @OA\JsonContent(
-     *      type="object",
-     *      @OA\Property(property="id", type="integer")
-     *   )
-     * )
-     * 
-     * @OA\Tag(name="Session")
-     */
-    #[Route('/session/suppression', name: 'suppression_session',methods: ['DELETE'])]
-    public function suppressionSession(Request $request){
-        $entityManager = $this->doctrine->getManager();
-
-        $data = json_decode($request->getContent(), true);
-
-        $id = $data['id'];
-
-        $session = $entityManager->getRepository(Session::class)->find($id);
-
-        if($session == null){
-            throw new BadRequestHttpException("La session n'existe pas");
-        }else{
-            $entityManager->remove($session);
-            $entityManager->flush();
-        }
-
-        $response = new Response();
-        $response->setStatusCode(Response::HTTP_OK);
-        $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-        return $response;
-    }
-
-    // Modifier une session
+        // Modifier une session
     /**
      * Modification d'une session
      * 
@@ -484,6 +395,54 @@ class ApiSessionController extends AbstractController{
         }
         $response = new Response();
         $response->setStatusCode(Response::HTTP_CREATED);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        return $response;
+    }
+    
+
+    // Supprimer une session
+    /**
+     * Suppression d'une session
+     * 
+     * @OA\Response(
+     *    response=200,
+     *    description="Session supprimée"
+     * )
+     * 
+     * @OA\Response(
+     *   response=400,
+     *   description="Requete invalide"
+     * )
+     * 
+     * @OA\RequestBody(
+     *   @OA\JsonContent(
+     *      type="object",
+     *      @OA\Property(property="id", type="integer")
+     *   )
+     * )
+     * 
+     * @OA\Tag(name="Session")
+     */
+    #[Route('/session/suppression', name: 'suppression_session',methods: ['DELETE'])]
+    public function suppressionSession(Request $request){
+        $entityManager = $this->doctrine->getManager();
+
+        $data = json_decode($request->getContent(), true);
+
+        $id = $data['id'];
+
+        $session = $entityManager->getRepository(Session::class)->find($id);
+
+        if($session == null){
+            throw new BadRequestHttpException("La session n'existe pas");
+        }else{
+            $entityManager->remove($session);
+            $entityManager->flush();
+        }
+
+        $response = new Response();
+        $response->setStatusCode(Response::HTTP_OK);
         $response->headers->set('Content-Type', 'application/json');
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
