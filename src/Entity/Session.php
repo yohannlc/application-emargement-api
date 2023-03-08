@@ -232,6 +232,16 @@ class Session
         return $this;
     }
 
+    public function removeAllIdSalle(): self
+    {
+        foreach ($this->idSalle as $salle) {
+            $salle->removeIdSession($this);
+        }
+        $this->idSalle->clear();
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, Staff>
      */
@@ -256,6 +266,13 @@ class Session
         return $this;
     }
 
+    public function removeAllIdStaff(): self
+    {
+        $this->idStaff->clear();
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, Groupe>
      */
@@ -276,6 +293,13 @@ class Session
     public function removeIdGroupe(Groupe $idGroupe): self
     {
         $this->idGroupe->removeElement($idGroupe);
+
+        return $this;
+    }
+
+    public function removeAllIdGroupe(): self
+    {
+        $this->idGroupe->clear();
 
         return $this;
     }

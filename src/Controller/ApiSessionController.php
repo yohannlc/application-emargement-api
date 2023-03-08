@@ -292,7 +292,6 @@ class ApiSessionController extends AbstractController{
         return $response;
     }
 
-        // Modifier une session
     /**
      * Modification d'une session
      * 
@@ -336,6 +335,11 @@ class ApiSessionController extends AbstractController{
         if($session == null){
             throw new BadRequestHttpException("La session n'existe pas");
         }else{
+            // Vider la session de ses groupes, salles et intervenants
+            $session->removeAllIdGroupe();
+            $session->removeAllIdSalle();
+            $session->removeAllIdStaff();
+
             // Variables pour la génération du code d'emargement
             $longueur = 15;                    
             $caracteres = ',;:!#@^ABCDEFGHIJKLMNOPQRSTUVWXYZ,;:!#@^abcdefghijklmnopqrstuvwxyz,;:!#@^0123456789,;:!#@^';
