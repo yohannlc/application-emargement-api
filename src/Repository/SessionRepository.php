@@ -73,6 +73,14 @@ class SessionRepository extends ServiceEntityRepository
         $query = $qb->getQuery();
         $results = $query->getArrayResult();
 
+        $newResults = [];
+        if($idGroupe != 0 || $idIntervenant != 0 || $idMatiere != 0 || $idSalle != 0){
+            foreach($results as &$result){
+                array_push($newResults, $this->getSessionById($result['id'])[0]);
+            }
+            return $newResults;
+        }
+
         // Convertir les chaînes en tableaux
         foreach ($results as &$result) {
             $result['intervenants'] = explode(', ', $result['intervenants']);
@@ -95,8 +103,7 @@ class SessionRepository extends ServiceEntityRepository
         $qb->leftJoin('s.idGroupe', 'g');
         $qb->leftJoin('s.type', 't');
         $qb->groupBy('s.id');
-        $qb->orderBy(`date`, 'ASC');
-        $qb->addOrderBy('s.heureDebut', 'ASC');
+        $qb->orderBy('s.heureDebut', 'ASC');
         $query = $qb->getQuery();
         $results = $query->getArrayResult();
 
