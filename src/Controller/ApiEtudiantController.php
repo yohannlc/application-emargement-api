@@ -84,42 +84,6 @@ class ApiEtudiantController extends AbstractController{
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
-    
-    /** 
-     * Récupérer les informations d'un étudiant par son INE
-     * 
-     * @OA\Response(
-     *   response=200,
-     *   description="Retourne les informations d'un étudiant",
-     *   @OA\JsonContent(
-     *     type="object",
-     *     @OA\Property(property="ine", type="string"),
-     *     @OA\Property(property="identifiant", type="string"),
-     *     @OA\Property(property="nom", type="string"),
-     *     @OA\Property(property="prenom", type="string")
-     *   )
-     * )
-     * 
-     * @OA\Tag(name="Etudiant")
-     */
-    #[Route('/etudiant/{ine}', name: 'etudiant',methods: ['GET'])]
-    public function getEtudiantByINE(string $ine): Response
-    {
-        $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
-
-        $etudiant = [
-            'ine' => $etudiant->getIne(),
-            'identifiant' => $etudiant->getIdentifiant(),
-            'nom' => $etudiant->getNom(),
-            'prenom' => $etudiant->getPrenom()
-        ];
-        
-        $response = new Response();
-        $response->setContent(json_encode($etudiant));
-        $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-        return $response;
-    }
 }
 
 

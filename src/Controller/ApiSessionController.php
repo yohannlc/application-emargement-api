@@ -35,48 +35,6 @@ class ApiSessionController extends AbstractController{
         $this->doctrine = $doctrine;
     }
 
-    /** 
-     * Récupérer une session en fonction de son id
-     * 
-     * @OA\Response(
-     *   response=200,
-     *   description="Retourne la session en fonction de son id",
-     *   @OA\JsonContent(
-     *     type="object",
-     *     @OA\Property(property="id", type="int"),
-     *     @OA\Property(property="date", type="string"),
-     *     @OA\Property(property="heureDebut", type="string"),
-     *     @OA\Property(property="heureFin", type="string"),
-     *     @OA\Property(property="matiere", type="string"),
-     *     @OA\Property(property="type", type="string"),
-     *     @OA\Property(property="salles", type="string"),
-     *     @OA\Property(property="intervenants", type="string"),
-     *     @OA\Property(property="groupes", type="string"),
-     *   )
-     * )
-     * 
-     * @OA\Parameter(
-     *   name="id",
-     *   in="path",
-     *   description="Id de la session",
-     *   required=true,
-     *   @OA\Schema(type="integer")
-     * )
-     * 
-     * @OA\Tag(name="Session")
-     */
-    #[Route('/session/{id}', name: 'session', methods: ['GET'])]
-    public function getSession($id): Response
-    {
-        $session = $this->doctrine->getRepository(Session::class)->getSessionById($id);
-
-        $response = new Response();
-        $response->setContent(json_encode($session));
-        $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-        return $response;
-    }
-
     /**
      * Récupérer les sessions en fonction des paramètres
      * 
@@ -311,6 +269,123 @@ class ApiSessionController extends AbstractController{
                 $entityManager->persist($session);
                 $entityManager->flush();
 
+                if(empty($etudiants)) $empty = true;
+                else $empty = false;
+
+                foreach ($etudiants as $etudiant) {
+                    $sql .= "WHEN :ine{$etudiant['ine']} THEN :code_emargement{$etudiant['ine']} ";
+                    $params["ine{$etudiant['ine']}"] = $etudiant['ine'];
+                    $params["code_emargement{$etudiant['ine']}"] = $codes_emargement[$etudiant['ine']];
+                }
+            }
+            if(!$empty){
+                $sql .= "END WHERE `id_session` = :id_session";
+                $params['id_session'] = $session->getId();
+                $stmt = $entityManager->getConnection()->prepare($sql);
+                $stmt->execute($params);
+            }
+        }
+        $response = new Response();
+        $response->setStatusCode(Response::HTTP_CREATED);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        return $response;
+    }
+
+    /**
+     * Modification d'une session
+     * 
+     * @OA\Response(
+     *    response=201,
+     *    description="Session modifiée"
+     * )
+     * 
+     * @OA\Response(
+     *   response=400,
+     *   description="Requete invalide"
+     * )
+     * 
+     * @OA\RequestBody(
+     *   @OA\JsonContent(
+     *      type="object",
+     *      @OA\Property(property="id", type="integer"),
+     *      @OA\Property(property="date", type="string"),
+     *      @OA\Property(property="heure_debut", type="string"),
+     *      @OA\Property(property="heure_fin", type="string"),
+     *      @OA\Property(property="id_matiere", type="integer"),
+     *      @OA\Property(property="type", type="string"),
+     *      @OA\Property(property="idGroupes", type="array", @OA\Items(type="integer")),
+     *      @OA\Property(property="idSalles", type="array", @OA\Items(type="integer")),
+     *      @OA\Property(property="idIntervenants", type="array", @OA\Items(type="integer"))
+     *   )
+     * )
+     * 
+     * @OA\Tag(name="Session")
+     */
+    #[Route('/session/miseajour', name: 'modification_session',methods: ['PUT'])]
+    public function modificationSession(Request $request){
+        $entityManager = $this->doctrine->getManager();
+
+        $data = json_decode($request->getContent(), true);
+        
+        $id = $data['id'];
+
+        $session = $entityManager->getRepository(Session::class)->find($id);
+
+        if($session == null){
+            throw new BadRequestHttpException("La session n'existe pas");
+        }else{
+            // Vider la session de ses groupes, salles et intervenants
+            $session->removeAllIdGroupe();
+            $session->removeAllIdSalle();
+            $session->removeAllIdStaff();
+
+            // Variables pour la génération du code d'emargement
+            $longueur = 15;                    
+            $caracteres = ',;:!#@^ABCDEFGHIJKLMNOPQRSTUVWXYZ,;:!#@^abcdefghijklmnopqrstuvwxyz,;:!#@^0123456789,;:!#@^';
+
+
+            $date = new \DateTime($data['date']);
+            $heureDebut = new \DateTime($data['heure_debut']);
+            $heureFin = new \DateTime($data['heure_fin']);
+            $idMatiere = $entityManager->getRepository(Matiere::class)->find($data['id_matiere']);
+            $type = $entityManager->getRepository(Type::class)->find($data['type']);
+            $idGroupes = $data['idGroupes'];
+            $idSalles = $data['idSalles'];
+            $idIntervenants = $data['idIntervenants'];
+
+            $session->setDate($date);
+            $session->setHeureDebut($heureDebut);
+            $session->setHeureFin($heureFin);
+            $session->setIdMatiere($idMatiere);
+            $session->setType($type);
+            foreach($idSalles as $idSalle){
+                $session->addIdSalle($entityManager->getRepository(Salle::class)->find($idSalle));
+            }
+            foreach($idIntervenants as $idIntervenant){
+                $session->addIdStaff($entityManager->getRepository(Staff::class)->find($idIntervenant));
+            }
+
+            $sql = "UPDATE `participe` SET `presence` = '0', `code_emargement` = CASE `ine` ";
+            $params = array();
+
+            foreach($idGroupes as $idGroupe){
+                $groupe = $entityManager->getRepository(Groupe::class)->find($idGroupe);
+                $session->addIdGroupe($groupe);
+                $etudiants = $entityManager->getRepository(Etudiant::class)->getEtudiantsByGroupe($idGroupe);
+
+                $codes_emargement = array();
+                
+                foreach($etudiants as $etudiant){
+                    $code_emargement = substr(str_shuffle(str_repeat($caracteres, $longueur)), 0, $longueur);
+                    $codes_emargement[$etudiant['ine']] = $code_emargement;
+                    $etudiant = $entityManager->getRepository(Etudiant::class)->find($etudiant['ine']);
+                    $session->addIne($etudiant);
+                    
+                }
+                $entityManager->persist($session);
+                $entityManager->flush();
+
                 foreach ($etudiants as $etudiant) {
                     $sql .= "WHEN :ine{$etudiant['ine']} THEN :code_emargement{$etudiant['ine']} ";
                     $params["ine{$etudiant['ine']}"] = $etudiant['ine'];
@@ -328,6 +403,7 @@ class ApiSessionController extends AbstractController{
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
+    
 
     // Supprimer une session
     /**
@@ -375,7 +451,6 @@ class ApiSessionController extends AbstractController{
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
-
 
 }
 ?>

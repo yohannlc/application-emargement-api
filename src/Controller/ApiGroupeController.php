@@ -58,36 +58,6 @@ class ApiGroupeController extends AbstractController{
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
-
-    /**
-     * Récupérer le groupe par id 
-     * 
-     * @OA\Response(
-     *   response=200,
-     *   description="Retourne le groupe par id",
-     *   @OA\JsonContent(
-     *     type="object",
-     *     @OA\Property(property="id", type="integer"),
-     *     @OA\Property(property="groupe", type="string")
-     *   )
-     * )
-     * 
-     * @OA\Tag(name="Groupe")
-     */
-    #[Route('/groupe/{id}', name: 'id',methods: ['GET'])]
-    public function getGroupeById($id): Response{
-        $groupe = $this->doctrine->getRepository(Groupe::class)->findOneby(['id' => $id]);
-        $groupe = [
-            'id' => $groupe->getId(),
-            'groupe' => $groupe->getGroupe()
-        ];
-
-        $response = new Response();
-        $response->setContent(json_encode($groupe));
-        $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-        return $response;
-    }
     
     /**
      * Création d'un groupe
@@ -164,116 +134,6 @@ class ApiGroupeController extends AbstractController{
     }
 
     /**
-     * Supprimer un étudiant d'un groupe
-     * 
-     * @OA\Response(
-     *   response=204,
-     *   description="Etudiant supprimé du groupe"
-     * )
-     * 
-     * @OA\Response(
-     *   response=400,
-     *   description="Groupe ou étudiant introuvable"
-     * )
-     * 
-     * @OA\RequestBody(
-     *   request="SuppressionEtudiant",
-     *   required=true,
-     *   @OA\JsonContent(
-     *     @OA\Property(property="idGroupe", type="integer"),
-     *     @OA\Property(property="ines", type="array", @OA\Items(type="string", example="A12345"))
-     *   )
-     * )
-     * 
-     * @OA\Tag(name="Groupe")
-     */
-    #[Route('/groupe/etudiant/suppression', name: 'groupe_suppression_etudiant',methods: ['DELETE'])]
-    public function removeEtudiantFromGroupe(Request $request)
-    {
-        $data = json_decode($request->getContent(), true);
-        $idGroupe = $data['idGroupe'];
-        $ines = $data['ines'];
-
-        foreach ($ines as $ine) {
-            $groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['id' => $idGroupe]);
-            if (!$groupe) {
-                throw $this->createNotFoundException(sprintf('Groupe non trouvé'));
-            }
-        
-            $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
-            if (!$etudiant) {
-                throw $this->createNotFoundException(sprintf('Etudiant non trouvé'));
-            }
-        
-            if (!$groupe->hasEtudiant($etudiant)) {
-                throw new BadRequestHttpException('Cet étudiant n\'appartient pas à ce groupe');
-            }
-        
-            $groupe->removeEtudiant($etudiant);
-        }
-        $entityManager = $this->doctrine->getManager();
-        $entityManager->persist($groupe);
-        $entityManager->flush();
-    
-        $response = new Response();
-        $response->setStatusCode(Response::HTTP_NO_CONTENT);
-        $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Methods', 'DELETE,GET,OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-    
-        return $response;
-    }
-
-    /** 
-     * Supprimer un groupe
-     * 
-     * @OA\Response(
-     *    response=204,
-     *    description="Groupe supprimé"
-     * )
-     * 
-     * @OA\Response(
-     *    response=400,
-     *    description="Groupe introuvable"
-     * )
-     * 
-     * @OA\RequestBody(
-     *   request="SuppressionGroupe",
-     *   required=true,
-     *   @OA\JsonContent(
-     *     @OA\Property(property="id", type="integer")
-     *   )
-     * )
-     * 
-     * @OA\Tag(name="Groupe")
-     */
-    #[Route('/groupe/suppression', name: 'groupe_suppression', methods: ['DELETE'])]
-    public function removeGroupe(Request $request)
-    {
-        $data = json_decode($request->getContent(), true);
-        $idGroupe = $data['id'];
-    
-        $groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['id' => $idGroupe]);
-        if (!$groupe) {
-            throw $this->createNotFoundException(sprintf('Groupe non trouvé'));
-        }
-    
-        $entityManager = $this->doctrine->getManager();
-        $entityManager->remove($groupe);
-        $entityManager->flush();
-    
-        $response = new Response();
-        $response->setStatusCode(Response::HTTP_NO_CONTENT);
-        $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Methods', 'DELETE,GET,OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-    
-        return $response;
-    }
-
-    /**
      * Mise à jour d'un groupe
      * 
      * @OA\Response(
@@ -334,6 +194,54 @@ class ApiGroupeController extends AbstractController{
         $response->setStatusCode(Response::HTTP_OK);
         $response->headers->set('Content-Type', 'application/json');
         $response->headers->set('Access-Control-Allow-Methods', 'PUT,GET,OPTIONS');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+    
+        return $response;
+    }
+
+        /** 
+     * Supprimer un groupe
+     * 
+     * @OA\Response(
+     *    response=204,
+     *    description="Groupe supprimé"
+     * )
+     * 
+     * @OA\Response(
+     *    response=400,
+     *    description="Groupe introuvable"
+     * )
+     * 
+     * @OA\RequestBody(
+     *   request="SuppressionGroupe",
+     *   required=true,
+     *   @OA\JsonContent(
+     *     @OA\Property(property="id", type="integer")
+     *   )
+     * )
+     * 
+     * @OA\Tag(name="Groupe")
+     */
+    #[Route('/groupe/suppression', name: 'groupe_suppression', methods: ['DELETE'])]
+    public function removeGroupe(Request $request)
+    {
+        $data = json_decode($request->getContent(), true);
+        $idGroupe = $data['id'];
+    
+        $groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['id' => $idGroupe]);
+        if (!$groupe) {
+            throw $this->createNotFoundException(sprintf('Groupe non trouvé'));
+        }
+    
+        $entityManager = $this->doctrine->getManager();
+        $entityManager->remove($groupe);
+        $entityManager->flush();
+    
+        $response = new Response();
+        $response->setStatusCode(Response::HTTP_NO_CONTENT);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Methods', 'DELETE,GET,OPTIONS');
         $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
         $response->headers->set('Access-Control-Allow-Origin', '*');
     

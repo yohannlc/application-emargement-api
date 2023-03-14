@@ -46,9 +46,6 @@ class SessionRepository extends ServiceEntityRepository
         if($date != 0){
             $qb->where('s.date = :dateDuJour');
             $qb->setParameter('dateDuJour', $date);
-        }else{
-            $qb->where('s.date = :dateDuJour');
-            $qb->setParameter('dateDuJour', (new \DateTime())->format('Y-m-d'));
         }
         if($idGroupe != 0){
             $qb->andWhere('g.id = :groupe');
@@ -75,6 +72,14 @@ class SessionRepository extends ServiceEntityRepository
         $qb->orderBy('s.heureDebut', 'ASC');
         $query = $qb->getQuery();
         $results = $query->getArrayResult();
+
+        $newResults = [];
+        if($idGroupe != 0 || $idIntervenant != 0 || $idMatiere != 0 || $idSalle != 0){
+            foreach($results as &$result){
+                array_push($newResults, $this->getSessionById($result['id'])[0]);
+            }
+            return $newResults;
+        }
 
         // Convertir les chaînes en tableaux
         foreach ($results as &$result) {
