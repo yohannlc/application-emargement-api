@@ -117,6 +117,65 @@ class SessionRepository extends ServiceEntityRepository
         return $results;
     }
 
+    public function getTodaySessionsByIntervenant($id){
+        $qb = $this->createQueryBuilder('s');
+        $qb->select('s.id',"DATE_FORMAT(s.date,'%Y-%m-%d') AS date", "DATE_FORMAT(s.heureDebut,'%H:%i') as heureDebut", "DATE_FORMAT(s.heureFin,'%H:%i') AS heureFin", 'm.matiere', 't.type', "GROUP_CONCAT(DISTINCT sa.salle SEPARATOR ', ') as salles", "GROUP_CONCAT(DISTINCT CONCAT(UPPER(st.nom),' ',st.prenom) SEPARATOR ', ') AS intervenants", "GROUP_CONCAT(DISTINCT g.groupe SEPARATOR ', ') as groupes");
+        $qb->where('s.date = :dateDuJour');
+        $qb->andWhere('st.id = :intervenant');
+        $qb->setParameter('dateDuJour', date('Y-m-d'));
+        $qb->setParameter('intervenant', $id);
+        $qb->leftJoin('s.idMatiere', 'm');
+        $qb->leftJoin('s.idSalle', 'sa');
+        $qb->leftJoin('s.idStaff', 'st');
+        $qb->leftJoin('s.idGroupe', 'g');
+        $qb->leftJoin('s.type', 't');
+        $qb->groupBy('s.id');
+        $qb->orderBy('s.heureDebut', 'ASC');
+        $query = $qb->getQuery();
+        $results = $query->getArrayResult();
+
+        $newResults = [];
+        foreach($results as &$result){
+            array_push($newResults, $this->getSessionById($result['id'])[0]);
+        }
+        return $newResults;
+    }
+
+    public function getTodaySessionsByEtudiant($ineEtudiant){
+        $qb = $this->createQueryBuilder('s');
+        $qb->select('s.id',"DATE_FORMAT(s.date,'%Y-%m-%d') AS date", "DATE_FORMAT(s.heureDebut,'%H:%i') as heureDebut", "DATE_FORMAT(s.heureFin,'%H:%i') AS heureFin", 'm.matiere', 't.type', "GROUP_CONCAT(DISTINCT sa.salle SEPARATOR ', ') as salles", "GROUP_CONCAT(DISTINCT CONCAT(UPPER(st.nom),' ',st.prenom) SEPARATOR ', ') AS intervenants", "GROUP_CONCAT(DISTINCT g.groupe SEPARATOR ', ') as groupes");
+        $qb->where('s.date = :dateDuJour');
+        $qb->andWhere('e.ine = :ineEtudiant');
+        $qb->setParameter('dateDuJour', date('Y-m-d'));
+        $qb->setParameter('ineEtudiant', $ineEtudiant);
+        $qb->leftJoin('s.idMatiere', 'm');
+        $qb->leftJoin('s.idSalle', 'sa');
+        $qb->leftJoin('s.idStaff', 'st');
+        $qb->leftJoin('s.idGroupe', 'g');
+        $qb->leftJoin('s.type', 't');
+        $qb->leftJoin('g.ine', 'e');
+        $qb->groupBy('s.id');
+        $qb->orderBy('s.heureDebut', 'ASC');
+        $query = $qb->getQuery();
+        $results = $query->getArrayResult();
+
+        $newResults = [];
+        foreach($results as &$result){
+            array_push($newResults, $this->getSessionById($result['id'])[0]);
+        }
+        return $newResults;
+
+        foreach ($results as &$result) {
+            $result['intervenants'] = explode(', ', $result['intervenants']);
+            $result['salles'] = explode(', ', $result['salles']);
+            $result['groupes'] = explode(', ', $result['groupes']);
+        }
+
+        return $results;
+    }
+
+    
+
 
 //    /**
 //     * @return Session[] Returns an array of Session objects

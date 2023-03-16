@@ -37,7 +37,7 @@ class ApiSessionController extends AbstractController{
 
     /**
      * Récupérer les sessions en fonction des paramètres
-     * 
+     *
      * @OA\Response(
      *    response=200,
      *    description="Retourne la liste des sessions en fonction des paramètres",
@@ -46,15 +46,15 @@ class ApiSessionController extends AbstractController{
      *          @OA\Property(property="id", type="int"),
      *          @OA\Property(property="date", type="string"),
      *          @OA\Property(property="heureDebut", type="string"),
-     *          @OA\Property(property="heureFin", type="string"),     
+     *          @OA\Property(property="heureFin", type="string"),
      *          @OA\Property(property="matiere", type="string"),
-     *          @OA\Property(property="type", type="string"),     
+     *          @OA\Property(property="type", type="string"),
      *          @OA\Property(property="salles", type="string"),
      *          @OA\Property(property="intervenants", type="string"),
      *          @OA\Property(property="groupes", type="string"),
      *    )
      * )
-     * 
+     *
      * @OA\Parameter(
      *   name="date",
      *   in="path",
@@ -62,7 +62,7 @@ class ApiSessionController extends AbstractController{
      *   required=true,
      *   @OA\Schema(type="string")
      * )
-     * 
+     *
      * @OA\Parameter(
      *   name="idGroupe",
      *   in="path",
@@ -70,7 +70,7 @@ class ApiSessionController extends AbstractController{
      *   required=true,
      *   @OA\Schema(type="integer")
      * )
-     * 
+     *
      * @OA\Parameter(
      *   name="idIntervenant",
      *   in="path",
@@ -78,15 +78,15 @@ class ApiSessionController extends AbstractController{
      *   required=true,
      *   @OA\Schema(type="integer")
      * )
-     * 
+     *
      * @OA\Parameter(
      *   name="idMatiere",
      *   in="path",
      *   description="Id de la matière. Si inutilisé, mettre à 0",
-     *   required=true,  
+     *   required=true,
      *   @OA\Schema(type="integer")
      * )
-     * 
+     *
      * @OA\Parameter(
      *   name="idSalle",
      *   in="path",
@@ -94,7 +94,7 @@ class ApiSessionController extends AbstractController{
      *   required=true,
      *   @OA\Schema(type="integer")
      * )
-     * 
+     *
      * @OA\Tag(name="Session")
      */
     #[Route('/sessions/date={date}/groupe={idGroupe}/matiere={idMatiere}/intervenant={idIntervenant}/salle={idSalle}', name: 'sessions', methods: ['GET'])]
@@ -111,7 +111,7 @@ class ApiSessionController extends AbstractController{
 
     /**
      * Récupérer les étudiants d'une session par groupe
-     * 
+     *
      * @OA\Response(
      *   response=200,
      *   description="Retourne la liste des étudiants d'une session par groupe",
@@ -122,7 +122,7 @@ class ApiSessionController extends AbstractController{
      *     @OA\Property(property="presence", type="string")
      *   )
      * )
-     * 
+     *
      * @OA\Parameter(
      *   name="id_session",
      *   in="path",
@@ -130,7 +130,7 @@ class ApiSessionController extends AbstractController{
      *   required=true,
      *   @OA\Schema(type="integer")
      * )
-     * 
+     *
      * @OA\Parameter(
      *   name="id_groupe",
      *   in="path",
@@ -138,9 +138,9 @@ class ApiSessionController extends AbstractController{
      *   required=true,
      *   @OA\Schema(type="integer")
      * )
-     * 
-     * @OA\Tag(name="Session")  
-     * 
+     *
+     * @OA\Tag(name="Session")
+     *
      */
     // Récupérer les étudiants d'une session par groupe
     #[Route('/session/{id_session}/groupe/{groupe}/etudiants', name: 'session_etudiants', methods: ['GET'])]
@@ -149,39 +149,156 @@ class ApiSessionController extends AbstractController{
         $conn = $this->doctrine->getConnection();
 
         $id_groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['groupe' => $groupe])->getId();
-    
+
         $sql = "SELECT et.nom, et.prenom, p.presence
                 FROM etudiant et
                 JOIN fait_partie fp ON fp.ine = et.ine
                 JOIN groupe g ON g.id = fp.id_groupe
                 JOIN participe p ON p.ine = et.ine
                 WHERE g.id = :id_groupe AND p.id_session = :id_session";
-    
+
         $stmt = $conn->executeQuery($sql, ['id_session' => $id_session, 'id_groupe' => $id_groupe]);
-    
+
         $etudiants = $stmt->fetchAllAssociative();
-    
+
         $response = new Response();
         $response->setContent(json_encode($etudiants));
         $response->headers->set('Content-Type', 'application/json');
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
-    
 
     /**
-     * Création d'une session
-     * 
+     * Récupération des sessions du jour pour un intervenant
+     *
      * @OA\Response(
-     *    response=201,
-     *    description="Session créée"
+     *    response=200,
+     *    description="Sessions récupérées",
+     *    @OA\JsonContent(
+     *       type="array",
+     *       @OA\Items(
+     *          type="object",
+     *          @OA\Property(property="id", type="integer"),
+     *          @OA\Property(property="date", type="string"),
+     *          @OA\Property(property="heure_debut", type="string"),
+     *          @OA\Property(property="heure_fin", type="string"),
+     *          @OA\Property(property="id_matiere", type="integer"),
+     *          @OA\Property(property="type", type="string"),
+     *          @OA\Property(property="idGroupes", type="array", @OA\Items(type="integer")),
+     *          @OA\Property(property="idSalles", type="array", @OA\Items(type="integer")),
+     *          @OA\Property(property="idIntervenants", type="array", @OA\Items(type="integer"))
+     *       )
+     *    )
      * )
-     * 
+     *
      * @OA\Response(
      *   response=400,
      *   description="Requete invalide"
      * )
-     * 
+     *
+     * @OA\Parameter(
+     *   name="idIntervenant",
+     *   in="path",
+     *   description="Id de l'intervenant",
+     *   required=true,
+     *   @OA\Schema(type="integer")
+     * )
+     *
+     * @OA\Tag(name="Session")
+     */
+    #[Route('/session/intervenant/{idIntervenant}', name: 'get_sessions_intervenant',methods: ['GET'])]
+    public function getTodaySessionsByIntervenant($idIntervenant){
+        $sessions = $this->doctrine->getRepository(Session::class)->getTodaySessionsByIntervenant($idIntervenant);
+
+        $response = new Response();
+        $response->setStatusCode(Response::HTTP_OK);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        $response->setContent(json_encode($sessions));
+        return $response;
+    }
+
+    /**
+     * Récupération des sessions du jour pour un etudiant
+     *
+     * @OA\Response(
+     *    response=200,
+     *    description="Sessions récupérées",
+     *    @OA\JsonContent(
+     *       type="array",
+     *       @OA\Items(
+     *          type="object",
+     *          @OA\Property(property="id", type="integer"),
+     *          @OA\Property(property="date", type="string"),
+     *          @OA\Property(property="heure_debut", type="string"),
+     *          @OA\Property(property="heure_fin", type="string"),
+     *          @OA\Property(property="id_matiere", type="integer"),
+     *          @OA\Property(property="type", type="string"),
+     *          @OA\Property(property="idGroupes", type="array", @OA\Items(type="integer")),
+     *          @OA\Property(property="idSalles", type="array", @OA\Items(type="integer")),
+     *          @OA\Property(property="idIntervenants", type="array", @OA\Items(type="integer"))
+     *       )
+     *    )
+     * )
+     *
+     * @OA\Response(
+     *   response=400,
+     *   description="Requete invalide"
+     * )
+     *
+     * @OA\Parameter(
+     *   name="ineEtudiant",
+     *   in="path",
+     *   description="ine de l'etudiant",
+     *   required=true,
+     *   @OA\Schema(type="string")
+     * )
+     *
+     * @OA\Tag(name="Session")
+     */
+    #[Route('/session/etudiant/{ineEtudiant}', name: 'get_sessions_etudiant',methods: ['GET'])]
+    public function getTodaySessionsByEtudiant($ineEtudiant){
+        $sessions = $this->doctrine->getRepository(Session::class)->getTodaySessionsByEtudiant($ineEtudiant);
+
+        $response = new Response();
+        $response->setStatusCode(Response::HTTP_OK);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        $response->setContent(json_encode($sessions));
+        return $response;
+    }
+
+
+    #[Route('/session/{id_session}/etudiants', name: 'get_etudiants_session',methods: ['GET'])]
+    public function getEtudiantsSession($id_session){
+        $conn = $this->doctrine->getConnection();
+
+        $sql = 'SELECT * FROM participe WHERE id_session = :id_session';
+
+        $params['id_session'] = $id_session;
+        $stmt = $conn->executeQuery($sql, $params);
+        $etudiants = $stmt->fetchAllAssociative();
+
+        $response = new Response();
+        $response->setContent(json_encode($etudiants));
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        return $response;
+    }
+
+    /**
+     * Création d'une session
+     *
+     * @OA\Response(
+     *    response=201,
+     *    description="Session créée"
+     * )
+     *
+     * @OA\Response(
+     *   response=400,
+     *   description="Requete invalide"
+     * )
+     *
      * @OA\RequestBody(
      *    @OA\JsonContent(
      *       type="object",
@@ -195,18 +312,18 @@ class ApiSessionController extends AbstractController{
      *       @OA\Property(property="idIntervenants", type="array", @OA\Items(type="integer"))
      *    )
      * )
-     * 
+     *
      * @OA\Tag(name="Session")
      */
     #[Route('/session/create', name: 'create_session',methods: ['POST'])]
     public function createSession(Request $request){
         $entityManager = $this->doctrine->getManager();
-        $data = json_decode($request->getContent(), true);        
+        $data = json_decode($request->getContent(), true);
         // Création de la session
         $session = new Session();
 
         // Variables pour la génération du code d'emargement
-        $longueur = 15;                    
+        $longueur = 15;
         $caracteres = ',;:!#@^ABCDEFGHIJKLMNOPQRSTUVWXYZ,;:!#@^abcdefghijklmnopqrstuvwxyz,;:!#@^0123456789,;:!#@^';
 
         // Vérification des données de la requête
@@ -258,13 +375,13 @@ class ApiSessionController extends AbstractController{
                 $etudiants = $entityManager->getRepository(Etudiant::class)->getEtudiantsByGroupe($idGroupe);
 
                 $codes_emargement = array();
-                
+
                 foreach($etudiants as $etudiant){
                     $code_emargement = substr(str_shuffle(str_repeat($caracteres, $longueur)), 0, $longueur);
                     $codes_emargement[$etudiant['ine']] = $code_emargement;
                     $etudiant = $entityManager->getRepository(Etudiant::class)->find($etudiant['ine']);
                     $session->addIne($etudiant);
-                    
+
                 }
                 $entityManager->persist($session);
                 $entityManager->flush();
@@ -294,17 +411,17 @@ class ApiSessionController extends AbstractController{
 
     /**
      * Modification d'une session
-     * 
+     *
      * @OA\Response(
      *    response=201,
      *    description="Session modifiée"
      * )
-     * 
+     *
      * @OA\Response(
      *   response=400,
      *   description="Requete invalide"
      * )
-     * 
+     *
      * @OA\RequestBody(
      *   @OA\JsonContent(
      *      type="object",
@@ -319,7 +436,7 @@ class ApiSessionController extends AbstractController{
      *      @OA\Property(property="idIntervenants", type="array", @OA\Items(type="integer"))
      *   )
      * )
-     * 
+     *
      * @OA\Tag(name="Session")
      */
     #[Route('/session/miseajour', name: 'modification_session',methods: ['PUT'])]
@@ -327,7 +444,7 @@ class ApiSessionController extends AbstractController{
         $entityManager = $this->doctrine->getManager();
 
         $data = json_decode($request->getContent(), true);
-        
+
         $id = $data['id'];
 
         $session = $entityManager->getRepository(Session::class)->find($id);
@@ -341,7 +458,7 @@ class ApiSessionController extends AbstractController{
             $session->removeAllIdStaff();
 
             // Variables pour la génération du code d'emargement
-            $longueur = 15;                    
+            $longueur = 15;
             $caracteres = ',;:!#@^ABCDEFGHIJKLMNOPQRSTUVWXYZ,;:!#@^abcdefghijklmnopqrstuvwxyz,;:!#@^0123456789,;:!#@^';
 
 
@@ -375,13 +492,13 @@ class ApiSessionController extends AbstractController{
                 $etudiants = $entityManager->getRepository(Etudiant::class)->getEtudiantsByGroupe($idGroupe);
 
                 $codes_emargement = array();
-                
+
                 foreach($etudiants as $etudiant){
                     $code_emargement = substr(str_shuffle(str_repeat($caracteres, $longueur)), 0, $longueur);
                     $codes_emargement[$etudiant['ine']] = $code_emargement;
                     $etudiant = $entityManager->getRepository(Etudiant::class)->find($etudiant['ine']);
                     $session->addIne($etudiant);
-                    
+
                 }
                 $entityManager->persist($session);
                 $entityManager->flush();
@@ -403,29 +520,29 @@ class ApiSessionController extends AbstractController{
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
-    
+
 
     // Supprimer une session
     /**
      * Suppression d'une session
-     * 
+     *
      * @OA\Response(
      *    response=200,
      *    description="Session supprimée"
      * )
-     * 
+     *
      * @OA\Response(
      *   response=400,
      *   description="Requete invalide"
      * )
-     * 
+     *
      * @OA\RequestBody(
      *   @OA\JsonContent(
      *      type="object",
      *      @OA\Property(property="id", type="integer")
      *   )
      * )
-     * 
+     *
      * @OA\Tag(name="Session")
      */
     #[Route('/session/suppression', name: 'suppression_session',methods: ['DELETE'])]
