@@ -184,9 +184,9 @@ class ApiSessionController extends AbstractController{
      *          @OA\Property(property="heure_fin", type="string"),
      *          @OA\Property(property="id_matiere", type="integer"),
      *          @OA\Property(property="type", type="string"),
-     *          @OA\Property(property="idGroupes", type="array", @OA\Items(type="integer")),
-     *          @OA\Property(property="idSalles", type="array", @OA\Items(type="integer")),
-     *          @OA\Property(property="idIntervenants", type="array", @OA\Items(type="integer"))
+     *          @OA\Property(property="groupes", type="array", @OA\Items(type="string")),
+     *          @OA\Property(property="salles", type="array", @OA\Items(type="string")),
+     *          @OA\Property(property="intervenants", type="array", @OA\Items(type="string"))
      *       )
      *    )
      * )
@@ -234,9 +234,9 @@ class ApiSessionController extends AbstractController{
      *          @OA\Property(property="heure_fin", type="string"),
      *          @OA\Property(property="id_matiere", type="integer"),
      *          @OA\Property(property="type", type="string"),
-     *          @OA\Property(property="idGroupes", type="array", @OA\Items(type="integer")),
-     *          @OA\Property(property="idSalles", type="array", @OA\Items(type="integer")),
-     *          @OA\Property(property="idIntervenants", type="array", @OA\Items(type="integer"))
+     *          @OA\Property(property="groupes", type="array", @OA\Items(type="string")),
+     *          @OA\Property(property="salles", type="array", @OA\Items(type="string")),
+     *          @OA\Property(property="intervenants", type="array", @OA\Items(type="string"))
      *       )
      *    )
      * )
