@@ -1,1 +1,2 @@
-test pull serv
+Requete pour l'étudiant => récupérer son code d'émargement à partir de son ine
+Requete pour l'intervenant => envoyer les présences de ses étudiants après avoir scanné leur code d'émargement
