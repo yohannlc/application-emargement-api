@@ -143,7 +143,7 @@ class ApiSessionController extends AbstractController{
      *
      */
     // Récupérer les étudiants d'une session par groupe
-    #[Route('/session/{id_session}/groupe/{groupe}/etudiants', name: 'session_etudiants', methods: ['GET'])]
+    #[Route('/session/{id_session}/groupe/{id_groupe}/etudiants', name: 'session_etudiants', methods: ['GET'])]
     public function getEtudiantsByGroupeBySession($id_session, $groupe): Response
     {
         $conn = $this->doctrine->getConnection();
@@ -268,12 +268,48 @@ class ApiSessionController extends AbstractController{
         return $response;
     }
 
-
+    /**
+     * Récupération des étudiants d'une session
+     * 
+     * @OA\Response(
+     *   response=200,
+     *   description="Etudiants récupérés",
+     *   @OA\JsonContent(
+     *     type="array",
+     *     @OA\Items(
+     *       type="object",
+     *       @OA\Property(property="ine_etudiant", type="string"),
+     *       @OA\Property(property="nom", type="string"),
+     *       @OA\Property(property="prenom", type="string"),
+     *       @OA\Property(property="presence", type="boolean"),
+     *       @OA\Property(property="code_emargement", type="string")
+     *     )
+     *   )
+     * )
+     * 
+     * @OA\Response(
+     *   response=400,
+     *   description="Requete invalide"
+     * )
+     * 
+     * @OA\Parameter(
+     *   name="id_session",
+     *   in="path",
+     *   description="Id de la session",
+     *   required=true,
+     *   @OA\Schema(type="integer")
+     * )
+     * 
+     * @OA\Tag(name="Session")
+     */
     #[Route('/session/{id_session}/etudiants', name: 'get_etudiants_session',methods: ['GET'])]
     public function getEtudiantsSession($id_session){
         $conn = $this->doctrine->getConnection();
 
-        $sql = 'SELECT * FROM participe WHERE id_session = :id_session';
+        $sql = 'SELECT p.ine, e.nom, e.prenom, p.presence, p.code_emargement ';
+        $sql .= 'FROM participe p ';
+        $sql .= 'INNER JOIN etudiant e ON e.ine = p.ine ';
+        $sql .= 'WHERE id_session = :id_session';
 
         $params['id_session'] = $id_session;
         $stmt = $conn->executeQuery($sql, $params);
@@ -456,6 +492,12 @@ class ApiSessionController extends AbstractController{
             $session->removeAllIdGroupe();
             $session->removeAllIdSalle();
             $session->removeAllIdStaff();
+
+            // Requete pour supprimer toutes les lignes de la table participe
+            $sql = "DELETE FROM `participe` WHERE `id_session` = :id_session";
+            $params = array('id_session' => $id);
+            $stmt = $entityManager->getConnection()->prepare($sql);
+            $stmt->execute($params);
 
             // Variables pour la génération du code d'emargement
             $longueur = 15;
