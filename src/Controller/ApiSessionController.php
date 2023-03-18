@@ -620,7 +620,68 @@ class ApiSessionController extends AbstractController{
     }
 
 
-    // Supprimer une session
+    /**
+     * Mise à jour des présences
+     *
+     * @OA\Response(
+     *    response=201,
+     *    description="Présences mises à jour"
+     * )
+     *
+     * @OA\Response(
+     *   response=400,
+     *   description="Requete invalide"
+     * )
+     *
+     * @OA\RequestBody(
+     *   @OA\JsonContent(
+     *      type="object",
+     *      @OA\Property(property="id", type="integer"),
+     *      @OA\Property(property="presence", type="array", @OA\Items(type="object",
+     *          @OA\Property(property="ine", type="string"),
+     *          @OA\Property(property="presence", type="integer")
+     *      ))
+     *   )
+     * )
+     *
+     * @OA\Tag(name="Session")
+     */
+    #[Route('/session/miseajour/presence', name: 'modification_presence',methods: ['PUT'])]
+    public function modificationPresence(Request $request){
+        $entityManager = $this->doctrine->getManager();
+
+        $data = json_decode($request->getContent(), true);
+
+        $id = $data['id'];
+
+        $session = $entityManager->getRepository(Session::class)->find($id);
+
+        if($session == null){
+            throw new BadRequestHttpException("La session n'existe pas");
+        }else{
+            $presence = $data['presence'];
+
+            $sql = "UPDATE `participe` SET `presence` = CASE `ine` ";
+            $params = array();
+
+            foreach($presence as $p){
+                $sql .= "WHEN :ine{$p['ine']} THEN :presence{$p['ine']} ";
+                $params["ine{$p['ine']}"] = $p['ine'];
+                $params["presence{$p['ine']}"] = $p['presence'];
+            }
+            $sql .= "END WHERE `id_session` = :id_session";
+            $params['id_session'] = $session->getId();
+            $stmt = $entityManager->getConnection()->prepare($sql);
+            $stmt->execute($params);
+        }
+        $response = new Response();
+        $response->setStatusCode(Response::HTTP_CREATED);
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        return $response;
+    }
+
+
     /**
      * Suppression d'une session
      *
