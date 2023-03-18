@@ -322,6 +322,62 @@ class ApiSessionController extends AbstractController{
         return $response;
     }
 
+    // Récupération du code d'emargement d'un étudiant
+    /**
+     * Récupération du code d'emargement d'un étudiant
+     * 
+     * @OA\Response(
+     *   response=200,
+     *   description="Code récupéré",
+     *   @OA\JsonContent(
+     *     type="object",
+     *     @OA\Property(property="code_emargement", type="string")
+     *   )
+     * )
+     * 
+     * @OA\Response(
+     *   response=400,
+     *   description="Requete invalide"
+     * )
+     * 
+     * @OA\Parameter(
+     *   name="id_session",
+     *   in="path",
+     *   description="Id de la session",
+     *   required=true,
+     *   @OA\Schema(type="integer")
+     * )
+     * 
+     * @OA\Parameter(
+     *   name="ine",
+     *   in="path",
+     *   description="Ine de l'étudiant",
+     *   required=true,
+     *   @OA\Schema(type="string")
+     * )
+     * 
+     * @OA\Tag(name="Session")
+     */
+    #[Route('/session/{id_session}/etudiant/{ine}/code_emargement', name: 'get_code_emargement',methods: ['GET'])]
+    public function getCodeEmargement($id_session, $ine){
+        $conn = $this->doctrine->getConnection();
+
+        $sql = 'SELECT code_emargement ';
+        $sql .= 'FROM participe ';
+        $sql .= 'WHERE id_session = :id_session AND ine = :ine';
+
+        $params['id_session'] = $id_session;
+        $params['ine'] = $ine;
+        $stmt = $conn->executeQuery($sql, $params);
+        $code = $stmt->fetchAssociative();
+
+        $response = new Response();
+        $response->setContent(json_encode($code));
+        $response->headers->set('Content-Type', 'application/json');
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        return $response;
+    }
+
     /**
      * Création d'une session
      *
