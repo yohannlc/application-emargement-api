@@ -34,7 +34,7 @@ class ApiEtudiantController extends AbstractController{
      *     type="object",
      *        @OA\Property(property="nom", type="string"),
      *        @OA\Property(property="prenom", type="string"),
-     *        @OA\Property(property="promo", type="int")
+     *        @OA\Property(property="ine", type="string")
      *     )
      *   )
      * )

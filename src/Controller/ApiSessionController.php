@@ -278,7 +278,7 @@ class ApiSessionController extends AbstractController{
      *     type="array",
      *     @OA\Items(
      *       type="object",
-     *       @OA\Property(property="ine_etudiant", type="string"),
+     *       @OA\Property(property="ine", type="string"),
      *       @OA\Property(property="nom", type="string"),
      *       @OA\Property(property="prenom", type="string"),
      *       @OA\Property(property="presence", type="boolean"),
