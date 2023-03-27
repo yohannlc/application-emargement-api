@@ -62,17 +62,6 @@ class EtudiantRepository extends ServiceEntityRepository
         }
     }
 
-    public function getEtudiantsBySession($id_session): array
-    {
-        return $this->createQueryBuilder('et')
-            ->leftJoin('et.idGroupe', 'g')
-            ->leftJoin('g.idSession', 's')
-            ->andWhere('s.id = :id_session')
-            ->setParameter('id_session', $id_session)
-            ->getQuery()
-            ->getArrayResult();
-    }
-
     public function getEtudiantsByGroupeBySession($id_session): array
     {
         return $this->createQueryBuilder('et')
