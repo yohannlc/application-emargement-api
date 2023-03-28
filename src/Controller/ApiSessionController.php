@@ -144,11 +144,11 @@ class ApiSessionController extends AbstractController{
      */
     // Récupérer les étudiants d'une session par groupe
     #[Route('/session/{id_session}/groupe/{id_groupe}/etudiants', name: 'session_etudiants', methods: ['GET'])]
-    public function getEtudiantsByGroupeBySession($id_session, $groupe): Response
+    public function getEtudiantsByGroupeBySession($id_session, $id_groupe): Response
     {
         $conn = $this->doctrine->getConnection();
 
-        $id_groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['groupe' => $groupe])->getId();
+        //$id_groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['groupe' => $groupe])->getId();
 
         $sql = "SELECT et.nom, et.prenom, p.presence
                 FROM etudiant et
