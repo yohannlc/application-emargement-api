@@ -140,7 +140,11 @@ class SessionRepository extends ServiceEntityRepository
         $query = $qb->getQuery();
         $results = $query->getArrayResult();
 
-        return $results;
+        $newResults = [];
+        foreach($results as &$result){
+            array_push($newResults, $this->getSessionById($result['id'])[0]);
+        }
+        return $newResults;
     }
 
     public function getTodaySessionsByEtudiant($ineEtudiant){
@@ -161,7 +165,11 @@ class SessionRepository extends ServiceEntityRepository
         $query = $qb->getQuery();
         $results = $query->getArrayResult();
 
-        return $results;
+        $newResults = [];
+        foreach($results as &$result){
+            array_push($newResults, $this->getSessionById($result['id'])[0]);
+        }
+        return $newResults;
     }
 
     
