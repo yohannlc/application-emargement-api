@@ -39,7 +39,7 @@ class ApiMatiereController extends AbstractController{
      * 
      * @OA\Tag(name="Matiere")
      */
-    #[Route('/matieres', name: 'matiere',methods: ['GET'])]
+    #[Route('/matieres', name: 'matieres',methods: ['GET'])]
     public function getAllMatieres(): Response
     {
         $matieres = $this->doctrine->getRepository(Matiere::class)->findAll();

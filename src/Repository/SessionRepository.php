@@ -74,6 +74,12 @@ class SessionRepository extends ServiceEntityRepository
         $results = $query->getArrayResult();
 
         $newResults = [];
+        /* 
+         * Si on a un filtre sur un groupe, intervenant, matière ou salle,
+         * il faut de nouveau récupérer les sessions à partir de leurs id
+         * car sinon on ne récupère pas certaines informations
+         * Ex : si on filtre par le groupe 1, et qu'une session a le groupe 1 et 2, on ne récupère pas le groupe 2
+         */
         if($idGroupe != 0 || $idIntervenant != 0 || $idMatiere != 0 || $idSalle != 0){
             foreach($results as &$result){
                 array_push($newResults, $this->getSessionById($result['id'])[0]);
@@ -134,11 +140,7 @@ class SessionRepository extends ServiceEntityRepository
         $query = $qb->getQuery();
         $results = $query->getArrayResult();
 
-        $newResults = [];
-        foreach($results as &$result){
-            array_push($newResults, $this->getSessionById($result['id'])[0]);
-        }
-        return $newResults;
+        return $results;
     }
 
     public function getTodaySessionsByEtudiant($ineEtudiant){
@@ -158,18 +160,6 @@ class SessionRepository extends ServiceEntityRepository
         $qb->orderBy('s.heureDebut', 'ASC');
         $query = $qb->getQuery();
         $results = $query->getArrayResult();
-
-        $newResults = [];
-        foreach($results as &$result){
-            array_push($newResults, $this->getSessionById($result['id'])[0]);
-        }
-        return $newResults;
-
-        foreach ($results as &$result) {
-            $result['intervenants'] = explode(', ', $result['intervenants']);
-            $result['salles'] = explode(', ', $result['salles']);
-            $result['groupes'] = explode(', ', $result['groupes']);
-        }
 
         return $results;
     }

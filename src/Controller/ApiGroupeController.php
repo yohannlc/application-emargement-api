@@ -85,7 +85,7 @@ class ApiGroupeController extends AbstractController{
      * 
      * @OA\Tag(name="Groupe")
      */
-    #[Route('/groupe/creation', name: 'groupe',methods: ['POST'])]
+    #[Route('/groupe/creation', name: 'groupe_creation',methods: ['POST'])]
     public function createGroupe(Request $request): Response
     {
         $response = new Response();
@@ -109,7 +109,6 @@ class ApiGroupeController extends AbstractController{
         }
 
         foreach ($ines as $ine) {
-            echo $ine;
             $etudiant = $this->doctrine->getRepository(Etudiant::class)->findOneBy(['ine' => $ine]);
 
             if (!$etudiant) {
@@ -126,8 +125,6 @@ class ApiGroupeController extends AbstractController{
         $response = new Response();
         $response->setStatusCode(Response::HTTP_CREATED);
         $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Methods', 'POST,GET,OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
         $response->headers->set('Access-Control-Allow-Origin', '*');
 
         return $response;
@@ -193,14 +190,12 @@ class ApiGroupeController extends AbstractController{
         $response = new Response();
         $response->setStatusCode(Response::HTTP_OK);
         $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Methods', 'PUT,GET,OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
         $response->headers->set('Access-Control-Allow-Origin', '*');
     
         return $response;
     }
 
-        /** 
+    /** 
      * Supprimer un groupe
      * 
      * @OA\Response(
@@ -241,8 +236,6 @@ class ApiGroupeController extends AbstractController{
         $response = new Response();
         $response->setStatusCode(Response::HTTP_NO_CONTENT);
         $response->headers->set('Content-Type', 'application/json');
-        $response->headers->set('Access-Control-Allow-Methods', 'DELETE,GET,OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type');
         $response->headers->set('Access-Control-Allow-Origin', '*');
     
         return $response;

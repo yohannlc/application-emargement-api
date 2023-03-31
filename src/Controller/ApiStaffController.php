@@ -40,7 +40,7 @@ class ApiStaffController extends AbstractController{
      * 
      * @OA\Tag(name="Staff")
      */
-    #[Route('/intervenants', name: 'staff',methods: ['GET'])]
+    #[Route('/intervenants', name: 'intervenants',methods: ['GET'])]
     public function getAllIntervenants(): Response
     {
         $staff = $this->doctrine->getRepository(Staff::class)->getAllIntervenants();

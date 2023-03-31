@@ -8,12 +8,6 @@ use Symfony\Component\Routing\Annotation\Route;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\Validator\Constraints\DateTimeInterface;
-use Doctrine\ORM\Query\ResultSetMapping;
-use Doctrine\DBAL\Connection;
-
-use Nelmio\ApiDocBundle\Annotation\Model;
-use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
 
 use App\Entity\Session;
@@ -23,7 +17,6 @@ use App\Entity\Type;
 use App\Entity\Groupe;
 use App\Entity\Salle;
 use App\Entity\Staff;
-
 
 use DateTime;
 
@@ -148,8 +141,7 @@ class ApiSessionController extends AbstractController{
     {
         $conn = $this->doctrine->getConnection();
 
-        //$id_groupe = $this->doctrine->getRepository(Groupe::class)->findOneBy(['groupe' => $groupe])->getId();
-
+        // On utilise une requête SQL car doctrine ne permet pas de faire des jointures sur des tables intermédiaires (fait_partie, participe)
         $sql = "SELECT et.nom, et.prenom, p.presence
                 FROM etudiant et
                 JOIN fait_partie fp ON fp.ine = et.ine
@@ -306,10 +298,10 @@ class ApiSessionController extends AbstractController{
     public function getEtudiantsSession($id_session){
         $conn = $this->doctrine->getConnection();
 
-        $sql = 'SELECT p.ine, e.nom, e.prenom, p.presence, p.code_emargement ';
-        $sql .= 'FROM participe p ';
-        $sql .= 'INNER JOIN etudiant e ON e.ine = p.ine ';
-        $sql .= 'WHERE id_session = :id_session';
+        $sql = "SELECT p.ine, e.nom, e.prenom, p.presence, p.code_emargement 
+                FROM participe p 
+                INNER JOIN etudiant e ON e.ine = p.ine 
+                WHERE id_session = :id_session";
 
         $params['id_session'] = $id_session;
         $stmt = $conn->executeQuery($sql, $params);
@@ -322,7 +314,6 @@ class ApiSessionController extends AbstractController{
         return $response;
     }
 
-    // Récupération du code d'emargement d'un étudiant
     /**
      * Récupération du code d'emargement d'un étudiant
      * 
@@ -362,9 +353,9 @@ class ApiSessionController extends AbstractController{
     public function getCodeEmargement($id_session, $ine){
         $conn = $this->doctrine->getConnection();
 
-        $sql = 'SELECT code_emargement ';
-        $sql .= 'FROM participe ';
-        $sql .= 'WHERE id_session = :id_session AND ine = :ine';
+        $sql = "SELECT code_emargement 
+                FROM participe 
+                WHERE id_session = :id_session AND ine = :ine";
 
         $params['id_session'] = $id_session;
         $params['ine'] = $ine;
@@ -470,10 +461,15 @@ class ApiSessionController extends AbstractController{
 
                 foreach($etudiants as $etudiant){
                     $code_emargement = substr(str_shuffle(str_repeat($caracteres, $longueur)), 0, $longueur);
+
+                    // Si le code existe déjà, on en génère un nouveau
+                    while(in_array($code_emargement, $codes_emargement)){
+                        $code_emargement = substr(str_shuffle(str_repeat($caracteres, $longueur)), 0, $longueur);
+                    }
+
                     $codes_emargement[$etudiant['ine']] = $code_emargement;
                     $etudiant = $entityManager->getRepository(Etudiant::class)->find($etudiant['ine']);
                     $session->addIne($etudiant);
-
                 }
                 $entityManager->persist($session);
                 $entityManager->flush();
@@ -487,6 +483,8 @@ class ApiSessionController extends AbstractController{
                     $params["code_emargement{$etudiant['ine']}"] = $codes_emargement[$etudiant['ine']];
                 }
             }
+
+            // Si la session n'a pas d'étudiants, on ne fait pas la requete pour éviter une erreur
             if(!$empty){
                 $sql .= "END WHERE `id_session` = :id_session";
                 $params['id_session'] = $session->getId();
@@ -593,6 +591,12 @@ class ApiSessionController extends AbstractController{
 
                 foreach($etudiants as $etudiant){
                     $code_emargement = substr(str_shuffle(str_repeat($caracteres, $longueur)), 0, $longueur);
+
+                    // Vérification que le code d'emargement n'est pas déjà utilisé
+                    while(in_array($code_emargement, $codes_emargement)){
+                        $code_emargement = substr(str_shuffle(str_repeat($caracteres, $longueur)), 0, $longueur);
+                    }
+
                     $codes_emargement[$etudiant['ine']] = $code_emargement;
                     $etudiant = $entityManager->getRepository(Etudiant::class)->find($etudiant['ine']);
                     $session->addIne($etudiant);
@@ -600,6 +604,9 @@ class ApiSessionController extends AbstractController{
                 }
                 $entityManager->persist($session);
                 $entityManager->flush();
+                
+                if(empty($etudiants)) $empty = true;
+                else $empty = false;
 
                 foreach ($etudiants as $etudiant) {
                     $sql .= "WHEN :ine{$etudiant['ine']} THEN :code_emargement{$etudiant['ine']} ";
@@ -607,10 +614,14 @@ class ApiSessionController extends AbstractController{
                     $params["code_emargement{$etudiant['ine']}"] = $codes_emargement[$etudiant['ine']];
                 }
             }
-            $sql .= "END WHERE `id_session` = :id_session";
-            $params['id_session'] = $session->getId();
-            $stmt = $entityManager->getConnection()->prepare($sql);
-            $stmt->execute($params);
+
+            // Si la session n'a pas d'étudiants, on ne fait pas la requete pour éviter une erreur
+            if(!$empty){
+                $sql .= "END WHERE `id_session` = :id_session";
+                $params['id_session'] = $session->getId();
+                $stmt = $entityManager->getConnection()->prepare($sql);
+                $stmt->execute($params);
+            }
         }
         $response = new Response();
         $response->setStatusCode(Response::HTTP_CREATED);
@@ -727,6 +738,5 @@ class ApiSessionController extends AbstractController{
         $response->headers->set('Access-Control-Allow-Origin', '*');
         return $response;
     }
-
 }
 ?>

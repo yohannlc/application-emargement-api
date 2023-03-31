@@ -39,7 +39,7 @@ class ApiTypeController extends AbstractController
      * 
      * @OA\Tag(name="Type")
      */
-    #[Route('/types', name: 'type',methods: ['GET'])]
+    #[Route('/types', name: 'types',methods: ['GET'])]
     public function getAllTypes(): Response
     {
         $types = $this->doctrine->getRepository(Type::class)->findAll();

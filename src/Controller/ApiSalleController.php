@@ -42,7 +42,7 @@ class ApiSalleController extends AbstractController
      * 
      * @OA\Tag(name="Salle")
      */
-    #[Route('/salles', name: 'salle',methods: ['GET'])]
+    #[Route('/salles', name: 'salles',methods: ['GET'])]
     public function getAllSalles(): Response
     {
         $salles = $this->doctrine->getRepository(Salle::class)->findAll();
